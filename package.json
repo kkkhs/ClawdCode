@@ -12,6 +12,7 @@
     "build": "bun build src/main.tsx --outdir dist --target node && chmod +x dist/main.js",
     "start": "bun dist/main.js",
     "typecheck": "tsc --noEmit",
+    "test:prompts": "bun run src/prompts/test.ts",
     "prepublishOnly": "bun run build"
   },
   "keywords": [

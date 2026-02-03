@@ -21,20 +21,13 @@ import type {
   ToolDefinition,
 } from './types.js';
 import { createChatService } from '../services/ChatService.js';
+import { buildSystemPrompt } from '../prompts/builder.js';
+import { createPlanModeReminder } from '../prompts/plan.js';
 
 // ========== 常量 ==========
 
 /** 硬性轮次上限，防止无限循环 */
 const TURN_LIMIT = 100;
-
-/** 默认系统提示词 */
-const DEFAULT_SYSTEM_PROMPT = `You are a helpful coding assistant. You help users with programming tasks, code review, debugging, and explaining code concepts.
-
-When working with code:
-- Be concise and focused
-- Provide working code examples when helpful
-- Explain your reasoning when making suggestions
-- Ask clarifying questions if the request is ambiguous`;
 
 /** 意图未完成检测模式 */
 const INCOMPLETE_INTENT_PATTERNS = [
@@ -65,7 +58,7 @@ export class Agent {
   private constructor(config: AgentConfig, options: AgentOptions = {}) {
     this.config = config;
     this.runtimeOptions = options;
-    this.systemPrompt = config.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+    this.systemPrompt = ''; // 在 initialize() 中构建
   }
 
   // ========== 静态工厂方法 ==========
@@ -101,14 +94,22 @@ export class Agent {
     if (this.isInitialized) return;
 
     try {
-      // 1. 创建 ChatService
+      // 1. 构建系统提示词（使用四层架构）
+      const promptResult = await buildSystemPrompt({
+        projectPath: process.cwd(),
+        replaceDefault: this.config.systemPrompt,
+        includeEnvironment: true,
+      });
+      this.systemPrompt = promptResult.prompt;
+
+      // 2. 创建 ChatService
       this.chatService = createChatService({
         apiKey: this.config.apiKey,
         baseURL: this.config.baseURL,
         model: this.config.model,
       });
 
-      // 2. 注册内置工具 [TODO: 第 6 章实现]
+      // 3. 注册内置工具 [TODO: 第 6 章实现]
       // await this.registerBuiltinTools();
 
       this.isInitialized = true;
