@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/kkkhs/ClawdCode/compare/v1.1.0...v1.1.1) (2026-02-03)
+
+
+### Bug Fixes
+
+* use PAT for release-please to trigger publish workflow ([b6c1ad4](https://github.com/kkkhs/ClawdCode/commit/b6c1ad4cd04bb8d3edc70f23560715f875a499a4))
+
 ## [1.1.0](https://github.com/kkkhs/ClawdCode/compare/v1.0.0...v1.1.0) (2026-02-03)
 
 
