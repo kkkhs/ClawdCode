@@ -13,6 +13,7 @@
     "start": "bun dist/main.js",
     "typecheck": "tsc --noEmit",
     "test:prompts": "bun run src/prompts/test.ts",
+    "test:tools": "bun run src/tools/test.ts",
     "prepublishOnly": "bun run build"
   },
   "keywords": [
@@ -48,13 +49,15 @@
   },
   "dependencies": {
     "chalk": "^5.4.1",
+    "glob": "^13.0.0",
     "ink": "^6.0.0",
     "ink-spinner": "^5.0.0",
     "ink-text-input": "^6.0.0",
     "openai": "^4.77.0",
     "react": "^19.0.0",
     "yargs": "^17.7.2",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.25.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

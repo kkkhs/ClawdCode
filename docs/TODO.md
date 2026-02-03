@@ -22,7 +22,7 @@
 
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
-| `registerBuiltinTools` | 注册内置工具 | ToolRegistry | 第 6 章 |
+| ~~`registerBuiltinTools`~~ | ~~注册内置工具~~ | ~~ToolRegistry~~ | ✅ 第 6 章 |
 | `executeToolCall` 完整实现 | 工具执行管道 | ExecutionPipeline | 第 7 章 |
 | `checkAndCompact` | 上下文压缩 | CompactionService | 第 8 章 |
 | ~~Plan 模式~~ | ~~只读调研模式~~ | ~~PLAN_MODE_SYSTEM_PROMPT~~ | ✅ 第 5 章 |
@@ -36,8 +36,22 @@
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
 | 压缩提示词 | 上下文压缩时使用 | CompactionService | 第 8 章 |
-| 工具描述格式 | ToolDescription 结构化 | Tool 系统 | 第 6 章 |
+| ~~工具描述格式~~ | ~~ToolDescription 结构化~~ | ~~Tool 系统~~ | ✅ 第 6 章 |
 | CLAWDCODE.md 多级查找 | 向上递归查找项目配置 | - | 可选优化 |
+
+## 第六章遗留
+
+| 功能 | 说明 | 依赖 | 计划章节 |
+|------|------|------|----------|
+| ~~Edit 工具~~ | ~~字符串替换编辑~~ | - | ✅ 基础版已实现 |
+| ~~Write 工具~~ | ~~文件写入~~ | - | ✅ 基础版已实现 |
+| ~~Bash 工具~~ | ~~Shell 命令执行~~ | - | ✅ 基础版已实现 |
+| SnapshotManager | 编辑前创建文件快照 | - | 第 7 章 |
+| FileAccessTracker | Read-Before-Write 追踪 | - | 第 7 章 |
+| BackgroundShellManager | 后台 Shell 进程管理 | - | 第 7 章 |
+| 权限确认流程 | 写操作用户确认 | ExecutionPipeline | 第 7 章 |
+| MCP 工具注册 | 动态注册 MCP 工具 | McpRegistry | 第 10 章 |
+| 集成到 Agent | Agent 使用工具系统 | ExecutionPipeline | 第 7 章 |
 
 ---
 
@@ -47,4 +61,10 @@
 
 | 功能 | 完成章节 | 日期 |
 |------|----------|------|
-| - | - | - |
+| registerBuiltinTools | 第 6 章 | 2026-02-03 |
+| 工具描述格式 (ToolDescription) | 第 6 章 | 2026-02-03 |
+| Edit 工具（基础版） | 第 6 章 | 2026-02-03 |
+| Write 工具 | 第 6 章 | 2026-02-03 |
+| Bash 工具（基础版） | 第 6 章 | 2026-02-03 |
+| Tool 完整接口 | 第 6 章 | 2026-02-03 |
+| ToolRegistry MCP 支持 | 第 6 章 | 2026-02-03 |
