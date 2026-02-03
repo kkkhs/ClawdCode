@@ -458,3 +458,103 @@ bun run dev --help
 - **模块化设计** 便于后续扩展新命令和选项
 
 下一章将实现 Agent 核心类和 Agentic Loop。
+
+---
+
+## TODO（待后续章节实现）
+
+> 以下功能依赖后续章节的基础设施，暂未实现：
+
+| 功能 | 依赖 | 计划章节 |
+|------|------|----------|
+| `initializeStoreState` | Zustand Store | 第 11 章 |
+| `mergeRuntimeConfig` | RuntimeConfig 类型 | 第 11 章 |
+| `appActions().setInitializationStatus` | Zustand Store actions | 第 11 章 |
+| 子命令 (mcp, doctor, update) | 各功能模块 | 第 10、12 章 |
+| `subagentRegistry.loadFromStandardLocations` | Subagent 系统 | 第 12 章 |
+| `HookManager` | Hooks 系统 | 第 12 章 |
+| `registerCleanup` / `GracefulShutdown` | 进程管理 | 第 12 章 |
+
+---
+
+## 技术亮点
+
+### 1. 早期参数解析 (Early Argument Parsing)
+
+```typescript
+// 在 yargs 解析前手动检测 --debug
+const rawArgs = hideBin(process.argv);
+if (rawArgs.includes('--debug')) {
+  isDebugMode = true;
+}
+```
+
+**为什么**：确保 debug 日志在任何模块初始化前就可用，不会丢失早期日志。
+
+### 2. 并行版本检查 (Parallel Version Check)
+
+```typescript
+// 启动版本检查但不等待
+versionCheckPromise = checkVersionOnStartup();
+
+// ... yargs 解析和中间件执行 ...
+
+// UI 中再 await
+const result = await versionCheckPromise;
+```
+
+**为什么**：版本检查是网络 I/O，与本地的参数解析、配置加载并行执行，不阻塞启动速度。
+
+### 3. 中间件链模式 (Middleware Chain Pattern)
+
+```typescript
+cli.middleware([
+  validatePermissions,  // 1. 验证权限参数
+  loadConfiguration,    // 2. 加载配置
+  validateOutput,       // 3. 验证输出格式
+]);
+```
+
+**为什么**：关注点分离，每个中间件只做一件事，便于测试和维护。
+
+### 4. 从 package.json 读取配置
+
+```typescript
+const packageJson = JSON.parse(await fs.readFile('package.json', 'utf-8'));
+const PACKAGE_NAME = packageJson.name;
+const CURRENT_VERSION = packageJson.version;
+```
+
+**为什么**：Single Source of Truth，版本号只在 package.json 维护，避免多处修改遗漏。
+
+### 5. AppWrapper 模式
+
+```typescript
+const AppWrapper = (props) => {
+  // 1. 处理版本检查
+  // 2. 显示 UpdatePrompt 或主界面
+  return isReady ? <MainInterface /> : <Loading />;
+};
+
+const App = (props) => (
+  <ErrorBoundary>
+    <AppWrapper {...props} />
+  </ErrorBoundary>
+);
+```
+
+**为什么**：分层设计，AppWrapper 处理初始化逻辑，MainInterface 专注 UI，ErrorBoundary 统一错误处理。
+
+### 6. 缓存 + 跳过版本机制
+
+```typescript
+interface VersionCache {
+  latestVersion: string;
+  checkedAt: number;
+  skipUntilVersion?: string;  // 用户选择跳过的版本
+}
+```
+
+**为什么**：
+- 缓存避免每次启动都请求网络
+- skipUntilVersion 尊重用户选择，不重复打扰

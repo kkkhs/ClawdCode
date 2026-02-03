@@ -466,3 +466,80 @@ export class ConfigManager {
 - Agent 核心代码完全无状态，与 UI 解耦
 - Hello World Agent 验证环境配置
 - **配置文件系统**：支持用户级/项目级配置，多优先级合并
+
+---
+
+## 技术亮点
+
+### 1. Ink - React for CLI
+
+```typescript
+// 像写 Web 组件一样写 CLI
+const StatusBar = ({ count }) => (
+  <Box>
+    <Spinner type="dots" />
+    <Text color="green"> Processing: {count} files</Text>
+  </Box>
+);
+```
+
+**为什么**：复用 React 知识，组件化开发，智能 diff 更新（不用全屏重绘）。
+
+### 2. Zustand 解决 React Context 痛点
+
+```typescript
+// Agent（非 React 环境）直接获取状态
+const config = vanillaStore.getState().config;
+
+// 不依赖 React 组件树，不会出现 "Context 未初始化" 问题
+```
+
+**为什么**：Agent 代码运行在 React 组件树外部，无法使用 `useContext()`。Zustand 提供脱离 React 的状态访问能力。
+
+### 3. 配置优先级链
+
+```
+默认值 < 用户配置 < 项目配置 < 环境变量 < CLI 参数
+```
+
+**为什么**：
+- 默认值保证程序能运行
+- 用户配置存放个人偏好
+- 项目配置覆盖项目特定设置
+- 环境变量便于 CI/CD
+- CLI 参数用于临时覆盖
+
+### 4. Zod 运行时验证
+
+```typescript
+const ConfigSchema = z.object({
+  apiKey: z.string().min(1),
+  model: z.string().optional(),
+});
+
+// 验证外部输入（配置文件、CLI 参数）
+const result = ConfigSchema.safeParse(userInput);
+```
+
+**为什么**：TypeScript 类型只在编译时检查，运行时用户可能传入任意数据。Zod 提供运行时验证，防止无效配置导致崩溃。
+
+### 5. Bun 类型导出注意事项
+
+```typescript
+// ❌ Bun 下可能报错
+export { Config, ModelConfig } from './types.js';
+
+// ✅ 正确方式
+export type { Config, ModelConfig } from './types.js';
+```
+
+**为什么**：Bun 对类型和值的导出区分更严格，纯类型必须用 `export type`。
+
+### 6. 敏感配置隔离
+
+```
+.clawdcode/config.json      → .gitignore (包含 API Key)
+.clawdcode/config.example.json → 提交到仓库 (模板)
+```
+
+**为什么**：API Key 等敏感信息不应该提交到代码仓库，但需要提供配置模板指导用户。
