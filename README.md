@@ -171,6 +171,30 @@ User Input → Build Messages → Call LLM → Tool Calls?
 - Node.js >= 18.0.0
 - OpenAI API key (or compatible API)
 
+## Development
+
+### Release & Publish
+
+项目使用 [release-please](https://github.com/google-github-actions/release-please-action) 自动管理版本和发布。
+
+**Commit 规范（Conventional Commits）：**
+- `feat:` 新功能 → minor 版本
+- `fix:` 修复 → patch 版本  
+- `feat!:` 或 `BREAKING CHANGE` → major 版本
+- `docs:` / `chore:` / `refactor:` → 不触发版本更新
+
+**配置 GitHub Secrets：**
+
+| Secret | 用途 | 获取方式 |
+|--------|------|----------|
+| `RELEASE_TOKEN` | release-please 创建 Release | GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens，权限：Contents (R/W)、Pull requests (R/W) |
+| `NPM_TOKEN` | 发布到 npm | npm → Access Tokens → Granular Access Token，勾选 Read and write |
+
+**发布流程：**
+```
+Push to main → release-please 创建 PR → 合并 PR → 创建 GitHub Release → 自动 npm publish
+```
+
 ## License
 
 MIT

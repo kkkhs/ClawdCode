@@ -33,3 +33,5 @@ jobs:
           release-type: node
           # 包名（用于 changelog 标题）
           package-name: clawdcode
+          # 使用 PAT 以触发后续 workflow
+          token: ${{ secrets.RELEASE_TOKEN }}
