@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0](https://github.com/kkkhs/ClawdCode/compare/v1.0.0...v1.1.0) (2026-02-03)
+
+
+### Features
+
+* chapter 5 - System Prompt design and implementation ([f8a829e](https://github.com/kkkhs/ClawdCode/commit/f8a829e06f19ecd8c9e8297d0ee8c0da3e86d067))
+* chapter 6 - Tool System design and implementation ([acc1e5e](https://github.com/kkkhs/ClawdCode/commit/acc1e5eafd6a195d9982d0a71fbcca687d6817a9))
+* chapter 7 - Execution Pipeline and Permission Control ([1efb304](https://github.com/kkkhs/ClawdCode/commit/1efb304e60a29b8504abc98d66d2b3254011c471))
+
 ## 1.0.0 (2026-02-03)
 
 
