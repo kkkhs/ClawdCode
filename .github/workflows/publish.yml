@@ -1,0 +1,45 @@
+# NPM Publish - 发布到 npm
+#
+# 触发条件：GitHub Release 发布时
+# 前置条件：需要在 GitHub Secrets 中配置 NPM_TOKEN
+#
+# 配置 NPM_TOKEN：
+# 1. npm 官网 → Access Tokens → Generate New Token → Granular Access Token
+# 2. 勾选 "Publish packages without 2FA"
+# 3. GitHub 仓库 → Settings → Secrets → Actions → New secret
+# 4. Name: NPM_TOKEN, Value: 你的 token
+
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build
+        run: bun run build
+
+      - name: Setup Node for npm publish
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

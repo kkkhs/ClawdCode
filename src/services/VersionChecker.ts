@@ -17,6 +17,11 @@ import { fileURLToPath } from 'url';
 interface PackageJson {
   name: string;
   version: string;
+  repository?: {
+    type?: string;
+    url?: string;
+  } | string;
+  homepage?: string;
 }
 
 // 获取 package.json 路径
@@ -32,6 +37,36 @@ try {
 } catch {
   // 如果读取失败，使用默认值
   packageJson = { name: 'clawdcode', version: '0.1.0' };
+}
+
+/**
+ * 从 package.json 获取 release notes URL
+ * 优先级：repository.url -> homepage -> 默认值
+ */
+function getReleaseNotesUrl(): string {
+  // 从 repository.url 提取 GitHub URL
+  const repoUrl = typeof packageJson.repository === 'string'
+    ? packageJson.repository
+    : packageJson.repository?.url;
+  
+  if (repoUrl) {
+    // 转换 git+https://github.com/xxx/yyy.git -> https://github.com/xxx/yyy/releases
+    const match = repoUrl.match(/github\.com[/:]([^/]+\/[^/.]+)/);
+    if (match) {
+      return `https://github.com/${match[1]}/releases`;
+    }
+  }
+  
+  // 从 homepage 提取
+  if (packageJson.homepage) {
+    const homepageMatch = packageJson.homepage.match(/github\.com\/([^/#]+\/[^/#]+)/);
+    if (homepageMatch) {
+      return `https://github.com/${homepageMatch[1]}/releases`;
+    }
+  }
+  
+  // 默认值
+  return `https://www.npmjs.com/package/${PACKAGE_NAME}`;
 }
 
 // ========== 配置常量 ==========
@@ -198,7 +233,7 @@ export async function checkVersion(forceCheck = false): Promise<VersionCheckResu
     latestVersion: null,
     hasUpdate: false,
     shouldPrompt: false,
-    releaseNotesUrl: `https://github.com/anthropics/claude-code/releases`,
+    releaseNotesUrl: getReleaseNotesUrl(),
   };
 
   try {
