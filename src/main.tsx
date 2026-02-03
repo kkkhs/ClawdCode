@@ -4,10 +4,11 @@
  *
  * 启动流程：
  * 1. 早期解析 --debug 参数（确保日志可用）
- * 2. 创建 yargs CLI 实例
- * 3. 注册全局选项和命令
- * 4. 执行中间件链（validatePermissions → loadConfiguration → validateOutput）
- * 5. 执行默认命令 → 启动 React UI
+ * 2. 启动版本检查（不等待，与后续流程并行）
+ * 3. 创建 yargs CLI 实例
+ * 4. 注册全局选项和命令
+ * 5. 执行中间件链（validatePermissions → loadConfiguration → validateOutput）
+ * 6. 执行默认命令 → 启动 React UI（传递 versionCheckPromise）
  *
  * 配置加载优先级（从低到高）：
  * 1. 默认配置
@@ -17,17 +18,20 @@
  * 5. CLI 参数 (--api-key, --base-url, --model)
  */
 
-import React from 'react'
-import { render } from 'ink'
-import yargs from 'yargs'
-import { hideBin } from 'yargs/helpers'
-import { App } from './ui/App.js'
-import { configManager } from './config/index.js'
-import { cliConfig, globalOptions, middlewareChain } from './cli/index.js'
-import type { CliArguments } from './cli/types.js'
+import React from 'react';
+import { render } from 'ink';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import { App } from './ui/App.js';
+import { configManager } from './config/index.js';
+import { cliConfig, globalOptions, middlewareChain } from './cli/index.js';
+import { checkVersionOnStartup } from './services/index.js';
+import type { CliArguments } from './cli/types.js';
+import type { VersionCheckResult } from './services/VersionChecker.js';
 
 // ========== 全局状态 ==========
-let isDebugMode = false
+let isDebugMode = false;
+let versionCheckPromise: Promise<VersionCheckResult | null> | undefined;
 
 /**
  * 早期解析 --debug 参数
@@ -53,9 +57,15 @@ function parseDebugEarly(): void {
  */
 async function main(): Promise<void> {
   // 1. 早期解析 --debug
-  parseDebugEarly()
+  parseDebugEarly();
 
-  // 2. 创建 yargs CLI 实例
+  // 2. 启动版本检查（不等待，与后续流程并行执行）
+  versionCheckPromise = checkVersionOnStartup();
+  if (isDebugMode) {
+    console.log('[DEBUG] Version check started (running in parallel)');
+  }
+
+  // 3. 创建 yargs CLI 实例
   const cli = yargs(hideBin(process.argv))
     .scriptName(cliConfig.scriptName)
     .usage(cliConfig.usage)
@@ -176,6 +186,7 @@ async function main(): Promise<void> {
             initialMessage={initialMessage}
             debug={args.debug}
             permissionMode={args.permissionMode}
+            versionCheckPromise={versionCheckPromise}
           />,
           {
             exitOnCtrlC: true,

@@ -2,6 +2,11 @@
  * App.tsx - 主 UI 组件
  * 
  * 使用 Ink (React for CLI) 构建终端界面
+ * 
+ * 启动流程：
+ * 1. AppWrapper 等待版本检查完成
+ * 2. 如果有新版本 → 显示 UpdatePrompt
+ * 3. 用户跳过或无更新 → 初始化应用 → 显示主界面
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
@@ -10,7 +15,11 @@ import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import { SimpleAgent } from '../agent/SimpleAgent.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
+import { UpdatePrompt } from './components/UpdatePrompt.js';
 import type { PermissionMode } from '../cli/types.js';
+import type { VersionCheckResult } from '../services/VersionChecker.js';
+
+// ========== 类型定义 ==========
 
 interface Message {
   role: 'user' | 'assistant';
@@ -24,9 +33,20 @@ export interface AppProps {
   initialMessage?: string;
   debug?: boolean;
   permissionMode?: PermissionMode;
+  versionCheckPromise?: Promise<VersionCheckResult | null>;
 }
 
-const AppContent: React.FC<AppProps> = ({ 
+// ========== 主界面组件 ==========
+
+interface MainInterfaceProps {
+  apiKey: string;
+  baseURL?: string;
+  model?: string;
+  initialMessage?: string;
+  debug?: boolean;
+}
+
+const MainInterface: React.FC<MainInterfaceProps> = ({ 
   apiKey, 
   baseURL, 
   model,
@@ -122,13 +142,97 @@ const AppContent: React.FC<AppProps> = ({
   );
 };
 
+// ========== AppWrapper 组件 ==========
+
+/**
+ * AppWrapper - 处理版本检查和初始化流程
+ * 
+ * 流程：
+ * 1. 等待版本检查 Promise（已在 main.tsx 启动，与 yargs/middleware 并行）
+ * 2. 如果有新版本 → 显示 UpdatePrompt
+ * 3. 用户选择后 → 初始化应用 → 显示主界面
+ */
+const AppWrapper: React.FC<AppProps> = (props) => {
+  const { versionCheckPromise, ...mainProps } = props;
+  
+  const [isReady, setIsReady] = useState(false);
+  const [versionInfo, setVersionInfo] = useState<VersionCheckResult | null>(null);
+  const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+
+  // 初始化应用
+  const initializeApp = useCallback(() => {
+    if (props.debug) {
+      console.log('[DEBUG] Initializing application...');
+    }
+    setIsReady(true);
+  }, [props.debug]);
+
+  // 启动流程
+  useEffect(() => {
+    const initialize = async () => {
+      // 1. 等待版本检查完成
+      if (versionCheckPromise) {
+        try {
+          const versionResult = await versionCheckPromise;
+          if (versionResult && versionResult.shouldPrompt) {
+            // 有新版本需要提示
+            setVersionInfo(versionResult);
+            setShowUpdatePrompt(true);
+            return;
+          }
+        } catch (error) {
+          // 版本检查失败，继续启动
+          if (props.debug) {
+            console.log('[DEBUG] Version check failed:', error);
+          }
+        }
+      }
+
+      // 2. 无需更新，直接初始化
+      initializeApp();
+    };
+
+    initialize();
+  }, [versionCheckPromise, initializeApp, props.debug]);
+
+  // 显示版本更新提示
+  if (showUpdatePrompt && versionInfo) {
+    return (
+      <UpdatePrompt
+        versionInfo={versionInfo}
+        onComplete={() => {
+          setShowUpdatePrompt(false);
+          initializeApp();
+        }}
+      />
+    );
+  }
+
+  // 等待初始化完成
+  if (!isReady) {
+    return (
+      <Box padding={1}>
+        <Text color="yellow">
+          <Spinner type="dots" />
+        </Text>
+        <Text color="yellow"> Starting ClawdCode...</Text>
+      </Box>
+    );
+  }
+
+  // 显示主界面
+  return <MainInterface {...mainProps} />;
+};
+
+// ========== 导出 ==========
+
 /**
  * App - 带有 ErrorBoundary 的主组件
  */
 export const App: React.FC<AppProps> = (props) => {
   return (
     <ErrorBoundary>
-      <AppContent {...props} />
+      <AppWrapper {...props} />
     </ErrorBoundary>
   );
 };

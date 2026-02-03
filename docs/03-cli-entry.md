@@ -9,15 +9,21 @@
 当用户在终端输入 `clawdcode` 命令时，会触发以下初始化流程：
 
 ```
-用户输入 → 早期解析 --debug → 创建 yargs 实例 → 注册选项和命令
-                                                      ↓
-                                              解析所有参数
-                                                      ↓
-                                              执行中间件链
-                                                      ↓
-                                    validatePermissions → loadConfiguration → validateOutput
-                                                      ↓
-                                              执行默认命令 → 启动 React UI
+用户输入 → 早期解析 --debug → 启动版本检查（并行）
+                                      ↓
+                              创建 yargs 实例 → 注册选项和命令
+                                      ↓
+                              解析所有参数
+                                      ↓
+                              执行中间件链
+                                      ↓
+            validatePermissions → loadConfiguration → validateOutput
+                                      ↓
+                              执行默认命令
+                                      ↓
+                    等待版本检查 → 有更新？→ 显示 UpdatePrompt
+                                      ↓
+                              启动 React UI 主界面
 ```
 
 ### 3.1.2 核心文件结构
@@ -30,9 +36,13 @@ src/
 │   ├── config.ts         # yargs 选项配置
 │   ├── middleware.ts     # 中间件函数
 │   └── index.ts          # 导出
+├── services/
+│   ├── VersionChecker.ts # 版本检查服务
+│   └── index.ts          # 导出
 └── ui/
     └── components/
-        └── ErrorBoundary.tsx  # 错误边界组件
+        ├── ErrorBoundary.tsx  # 错误边界组件
+        └── UpdatePrompt.tsx   # 更新提示组件
 ```
 
 ## 3.2 入口文件详解
@@ -315,7 +325,74 @@ export class ErrorBoundary extends React.Component<Props, State> {
 }
 ```
 
-## 3.7 本章实现
+## 3.7 版本检查服务
+
+### 3.7.1 启动时版本检查
+
+ClawdCode 在启动时会并行检查是否有新版本可用。版本检查在 CLI 入口处立即启动，与 yargs 解析、middleware 执行同时进行，不阻塞启动流程。
+
+如果检测到新版本，会在进入主界面前显示交互式更新提示：
+
+- **Update now** - 立即执行 `npm install -g clawdcode@latest` 并退出
+- **Skip** - 跳过本次提示，继续进入主界面
+- **Skip until next version** - 跳过当前版本的提示，直到有更新的版本发布
+
+### 3.7.2 核心接口
+
+```typescript
+// src/services/VersionChecker.ts
+
+export interface VersionCheckResult {
+  currentVersion: string;
+  latestVersion: string | null;
+  hasUpdate: boolean;
+  shouldPrompt: boolean; // 是否应该显示提示（考虑 skip 设置）
+  releaseNotesUrl: string;
+  error?: string;
+}
+
+// 主要导出函数
+export async function checkVersion(forceCheck?: boolean): Promise<VersionCheckResult>;
+export async function checkVersionOnStartup(): Promise<VersionCheckResult | null>;
+export async function setSkipUntilVersion(version: string): Promise<void>;
+export async function performUpgrade(): Promise<{ success: boolean; message: string }>;
+export function getUpgradeCommand(): string;
+```
+
+### 3.7.3 缓存机制
+
+为避免每次启动都请求网络，使用本地缓存：
+
+```typescript
+interface VersionCache {
+  latestVersion: string;
+  checkedAt: number;
+  skipUntilVersion?: string; // 跳过直到此版本
+}
+
+const CACHE_FILE = '~/.clawdcode/version-cache.json';
+const CACHE_TTL = 60 * 60 * 1000; // 1 小时
+```
+
+### 3.7.4 UpdatePrompt 组件
+
+```typescript
+// src/ui/components/UpdatePrompt.tsx
+
+interface UpdatePromptProps {
+  versionInfo: VersionCheckResult;
+  onComplete: () => void;
+}
+
+// 用户选项
+const menuOptions = [
+  { key: 'update', label: 'Update now' },
+  { key: 'skip', label: 'Skip' },
+  { key: 'skipUntil', label: 'Skip until next version' },
+];
+```
+
+## 3.8 本章实现
 
 本章实现了以下功能：
 
@@ -335,12 +412,22 @@ export class ErrorBoundary extends React.Component<Props, State> {
 4. **错误边界** (`src/ui/components/ErrorBoundary.tsx`)
    - React 错误边界组件
 
-5. **重构 main.tsx**
+5. **版本检查服务** (`src/services/VersionChecker.ts`)
+   - 并行版本检查
+   - 缓存机制（1小时 TTL）
+   - 跳过版本功能
+
+6. **更新提示组件** (`src/ui/components/UpdatePrompt.tsx`)
+   - 交互式更新提示
+   - 支持键盘导航
+
+7. **重构 main.tsx**
    - 使用新的 CLI 架构
+   - 启动时并行版本检查
    - 支持 `initialMessage` 参数
    - 完善的错误处理
 
-## 3.8 使用方式
+## 3.9 使用方式
 
 ```bash
 # 启动交互模式
@@ -359,12 +446,14 @@ bun run dev --debug
 bun run dev --help
 ```
 
-## 3.9 总结
+## 3.10 总结
 
 本章构建了 CLI 的完整架构：
 
 - **yargs** 处理命令行参数解析
 - **中间件链** 在命令执行前进行验证和初始化
+- **版本检查服务** 并行检查更新，不阻塞启动
+- **UpdatePrompt** 交互式更新提示
 - **ErrorBoundary** 优雅处理 React 渲染错误
 - **模块化设计** 便于后续扩展新命令和选项
 

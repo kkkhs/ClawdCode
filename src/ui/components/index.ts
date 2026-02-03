@@ -3,3 +3,4 @@
  */
 
 export { ErrorBoundary } from './ErrorBoundary.js';
+export { UpdatePrompt } from './UpdatePrompt.js';
