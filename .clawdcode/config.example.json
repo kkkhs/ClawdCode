@@ -6,5 +6,23 @@
   },
   "ui": {
     "theme": "dark"
-  }
+  },
+  "permissions": {
+    "allow": [
+      "Read(**/*)",
+      "Glob(**/*)",
+      "Grep(**/*)",
+      "Bash(npm:*)",
+      "Bash(git:*)",
+      "Bash(bun:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Write(/etc/*)",
+      "Write(/usr/*)"
+    ],
+    "ask": []
+  },
+  "defaultPermissionMode": "default"
 }

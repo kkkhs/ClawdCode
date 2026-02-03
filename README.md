@@ -72,14 +72,52 @@ ClawdCode supports multiple configuration methods (in priority order):
 
 ```json
 {
-  "defaultModel": {
-    "provider": "openai",
+  "default": {
     "apiKey": "sk-your-api-key",
     "baseURL": "https://api.openai.com/v1",
     "model": "gpt-4"
+  },
+  "ui": {
+    "theme": "dark"
+  },
+  "permissions": {
+    "allow": ["Bash(npm:*)", "Bash(git:*)"],
+    "deny": ["Bash(rm -rf:*)"]
+  },
+  "defaultPermissionMode": "default"
+}
+```
+
+### Permission Modes
+
+| Mode | Read | Write | Execute |
+|------|------|-------|---------|
+| `default` | ✅ Auto | ❓ Ask | ❓ Ask |
+| `autoEdit` | ✅ Auto | ✅ Auto | ❓ Ask |
+| `yolo` | ✅ Auto | ✅ Auto | ✅ Auto |
+| `plan` | ✅ Auto | ❌ Deny | ❌ Deny |
+
+### Permission Rules
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(**/*.ts)",
+      "Bash(npm:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Write(/etc/*)"
+    ]
   }
 }
 ```
+
+Rule format: `ToolName(pattern)` where pattern supports:
+- Exact match: `Bash(npm test)`
+- Prefix wildcard: `Bash(npm:*)` matches `npm install`, `npm test`, etc.
+- Glob pattern: `Read(**/*.ts)` matches all TypeScript files
 
 ## Usage
 
