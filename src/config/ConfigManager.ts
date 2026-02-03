@@ -1,0 +1,224 @@
+/**
+ * ConfigManager - 配置管理器
+ * 
+ * 配置加载优先级（从低到高）：
+ * 1. 默认配置
+ * 2. 用户配置 (~/.clawdcode/config.json)
+ * 3. 项目配置 (./.clawdcode/config.json)
+ * 4. 环境变量
+ * 5. CLI 参数
+ */
+
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
+import { Config, ConfigSchema, DEFAULT_CONFIG, ModelConfig } from './types.js';
+
+export class ConfigManager {
+  private static instance: ConfigManager;
+  private config: Config;
+  private configPaths: string[] = [];
+
+  private constructor() {
+    this.config = { ...DEFAULT_CONFIG };
+  }
+
+  /**
+   * 获取单例实例
+   */
+  static getInstance(): ConfigManager {
+    if (!ConfigManager.instance) {
+      ConfigManager.instance = new ConfigManager();
+    }
+    return ConfigManager.instance;
+  }
+
+  /**
+   * 初始化配置（加载所有配置源）
+   */
+  async initialize(projectPath?: string): Promise<void> {
+    // 1. 从默认配置开始
+    this.config = { ...DEFAULT_CONFIG };
+
+    // 2. 加载用户配置
+    const userConfigPath = this.getUserConfigPath();
+    await this.loadConfigFile(userConfigPath);
+
+    // 3. 加载项目配置
+    if (projectPath) {
+      const projectConfigPath = path.join(projectPath, '.clawdcode', 'config.json');
+      await this.loadConfigFile(projectConfigPath);
+    } else {
+      // 尝试从当前目录加载
+      const cwdConfigPath = path.join(process.cwd(), '.clawdcode', 'config.json');
+      await this.loadConfigFile(cwdConfigPath);
+    }
+
+    // 4. 应用环境变量
+    this.applyEnvironmentVariables();
+  }
+
+  /**
+   * 获取用户配置目录路径
+   */
+  getUserConfigDir(): string {
+    return path.join(os.homedir(), '.clawdcode');
+  }
+
+  /**
+   * 获取用户配置文件路径
+   */
+  getUserConfigPath(): string {
+    return path.join(this.getUserConfigDir(), 'config.json');
+  }
+
+  /**
+   * 加载配置文件
+   */
+  private async loadConfigFile(configPath: string): Promise<boolean> {
+    try {
+      if (!fs.existsSync(configPath)) {
+        return false;
+      }
+
+      const content = fs.readFileSync(configPath, 'utf-8');
+      const parsed = JSON.parse(content);
+      const validated = ConfigSchema.partial().parse(parsed);
+
+      // 深度合并配置
+      this.config = this.mergeConfig(this.config, validated);
+      this.configPaths.push(configPath);
+
+      return true;
+    } catch (error) {
+      console.warn(`Warning: Failed to load config from ${configPath}:`, (error as Error).message);
+      return false;
+    }
+  }
+
+  /**
+   * 应用环境变量
+   */
+  private applyEnvironmentVariables(): void {
+    this.config.default = this.config.default || {};
+    const defaultConfig = this.config.default;
+
+    if (process.env.OPENAI_API_KEY) {
+      defaultConfig.apiKey = process.env.OPENAI_API_KEY;
+    }
+    if (process.env.OPENAI_BASE_URL) {
+      defaultConfig.baseURL = process.env.OPENAI_BASE_URL;
+    }
+    if (process.env.OPENAI_MODEL) {
+      defaultConfig.model = process.env.OPENAI_MODEL;
+    }
+  }
+
+  /**
+   * 应用 CLI 参数（最高优先级）
+   */
+  applyCliArgs(args: Partial<ModelConfig>): void {
+    this.config.default = this.config.default || {};
+    const defaultConfig = this.config.default;
+
+    if (args.apiKey) {
+      defaultConfig.apiKey = args.apiKey;
+    }
+    if (args.baseURL) {
+      defaultConfig.baseURL = args.baseURL;
+    }
+    if (args.model) {
+      defaultConfig.model = args.model;
+    }
+  }
+
+  /**
+   * 深度合并配置
+   */
+  private mergeConfig(base: Config, override: Partial<Config>): Config {
+    const merged: Config = {
+      ...base,
+    };
+
+    if (override.default || base.default) {
+      merged.default = {
+        ...base.default,
+        ...override.default,
+      };
+    }
+
+    if (override.models) {
+      merged.models = override.models;
+    }
+
+    if (override.ui || base.ui) {
+      merged.ui = {
+        ...base.ui,
+        ...override.ui,
+      };
+    }
+
+    return merged;
+  }
+
+  /**
+   * 获取完整配置
+   */
+  getConfig(): Config {
+    return this.config;
+  }
+
+  /**
+   * 获取默认模型配置
+   */
+  getDefaultModel(): ModelConfig {
+    return this.config.default ?? {};
+  }
+
+  /**
+   * 获取已加载的配置文件路径
+   */
+  getLoadedConfigPaths(): string[] {
+    return [...this.configPaths];
+  }
+
+  /**
+   * 创建默认配置文件
+   */
+  async createDefaultConfig(): Promise<string> {
+    const configDir = this.getUserConfigDir();
+    const configPath = this.getUserConfigPath();
+
+    // 创建目录
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true });
+    }
+
+    // 写入默认配置（不包含敏感信息）
+    const defaultConfig: Config = {
+      default: {
+        model: 'gpt-4',
+        // apiKey: 'your-api-key',  // 需要用户自己填写
+        // baseURL: 'https://api.openai.com/v1',
+      },
+      ui: {
+        theme: 'dark',
+      },
+    };
+
+    const content = JSON.stringify(defaultConfig, null, 2);
+    fs.writeFileSync(configPath, content, 'utf-8');
+
+    return configPath;
+  }
+
+  /**
+   * 验证配置是否完整（有 API Key）
+   */
+  isConfigValid(): boolean {
+    return !!this.config.default?.apiKey;
+  }
+}
+
+// 导出单例
+export const configManager = ConfigManager.getInstance();

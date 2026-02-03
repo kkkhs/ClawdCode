@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+bun.lockb
+bun.lock
+
+# Specs (original documentation)
+specs/
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.local
+
+# Config with secrets (keep config template, ignore actual config)
+.clawdcode/config.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
