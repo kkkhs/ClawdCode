@@ -18,6 +18,19 @@
 | `BackgroundShellManager` | 后台 Shell 管理 | Shell 工具 | 第 6 章 |
 | `McpRegistry` | MCP 注册表 | MCP 模块 | 第 10 章 |
 
+## 第四章遗留
+
+| 功能 | 说明 | 依赖 | 计划章节 |
+|------|------|------|----------|
+| `registerBuiltinTools` | 注册内置工具 | ToolRegistry | 第 6 章 |
+| `executeToolCall` 完整实现 | 工具执行管道 | ExecutionPipeline | 第 7 章 |
+| `checkAndCompact` | 上下文压缩 | CompactionService | 第 8 章 |
+| Plan 模式 | 只读调研模式 | PLAN_MODE_SYSTEM_PROMPT | 第 5 章 |
+| `processAtMentions` | @ 文件提及处理 | AttachmentCollector | 第 6 章 |
+| `runPlanLoop` | Plan 模式执行循环 | Plan 系统提示词 | 第 5 章 |
+| `applyToolWhitelist` | 工具白名单 | ToolRegistry | 第 6 章 |
+| 循环检测 | 防止 Agent 陷入循环 | LoopDetector | 第 8 章 |
+
 ---
 
 ## 完成记录

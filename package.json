@@ -1,7 +1,7 @@
 {
   "name": "clawdcode",
   "version": "0.1.0",
-  "description": "A CLI Coding Agent inspired by Claude Code",
+  "description": "A CLI Coding Agent inspired by Claude Code - An AI-powered coding assistant that can read, write, and execute code",
   "type": "module",
   "main": "dist/main.js",
   "bin": {
@@ -11,16 +11,40 @@
     "dev": "bun run src/main.tsx",
     "build": "bun build src/main.tsx --outdir dist --target node && chmod +x dist/main.js",
     "start": "bun dist/main.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "cli",
     "ai",
     "coding-agent",
-    "llm"
+    "llm",
+    "openai",
+    "gpt",
+    "claude",
+    "copilot",
+    "assistant",
+    "terminal",
+    "developer-tools"
   ],
-  "author": "",
+  "author": "kkkhs",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kkkhs/ClawdCode.git"
+  },
+  "homepage": "https://github.com/kkkhs/ClawdCode#readme",
+  "bugs": {
+    "url": "https://github.com/kkkhs/ClawdCode/issues"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "chalk": "^5.4.1",
     "ink": "^6.0.0",
@@ -35,6 +59,7 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.0",
     "@types/yargs": "^17.0.33",
+    "react-devtools-core": "^7.0.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

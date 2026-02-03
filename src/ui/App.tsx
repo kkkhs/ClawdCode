@@ -13,7 +13,8 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
-import { SimpleAgent } from '../agent/SimpleAgent.js';
+import { Agent } from '../agent/Agent.js';
+import type { Message, ChatContext } from '../agent/types.js';
 import { ErrorBoundary } from './components/ErrorBoundary.js';
 import { UpdatePrompt } from './components/UpdatePrompt.js';
 import type { PermissionMode } from '../cli/types.js';
@@ -21,7 +22,8 @@ import type { VersionCheckResult } from '../services/VersionChecker.js';
 
 // ========== 类型定义 ==========
 
-interface Message {
+/** UI 展示用的消息类型 */
+interface UIMessage {
   role: 'user' | 'assistant';
   content: string;
 }
@@ -54,47 +56,117 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
   debug,
 }) => {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [uiMessages, setUIMessages] = useState<UIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
+  
+  // Agent 实例和上下文
+  const agentRef = useRef<Agent | null>(null);
+  const contextRef = useRef<ChatContext>({
+    sessionId: `session-${Date.now()}`,
+    messages: [],
+  });
   const initialMessageSent = useRef(false);
 
-  const agent = new SimpleAgent({ apiKey, baseURL, model });
+  // 初始化 Agent（使用无状态设计）
+  useEffect(() => {
+    const initAgent = async () => {
+      try {
+        if (debug) {
+          console.log('[DEBUG] Initializing Agent...');
+        }
+        
+        agentRef.current = await Agent.create({
+          apiKey,
+          baseURL,
+          model,
+        });
+        
+        setIsInitializing(false);
+        
+        if (debug) {
+          console.log('[DEBUG] Agent initialized successfully');
+        }
+      } catch (error) {
+        setInitError(error instanceof Error ? error.message : '初始化失败');
+        setIsInitializing(false);
+      }
+    };
+    
+    initAgent();
+  }, [apiKey, baseURL, model, debug]);
 
   const handleSubmit = useCallback(async (value: string) => {
-    if (!value.trim()) return;
+    if (!value.trim() || !agentRef.current) return;
 
-    // 添加用户消息
-    const userMessage: Message = { role: 'user', content: value };
-    setMessages(prev => [...prev, userMessage]);
+    // 添加用户消息到 UI
+    const userUIMessage: UIMessage = { role: 'user', content: value };
+    setUIMessages(prev => [...prev, userUIMessage]);
     setInput('');
     setIsLoading(true);
 
+    // 添加用户消息到上下文
+    const userMessage: Message = { role: 'user', content: value };
+    contextRef.current.messages.push(userMessage);
+
     if (debug) {
       console.log('[DEBUG] Sending message:', value);
+      console.log('[DEBUG] Context messages count:', contextRef.current.messages.length);
     }
 
     try {
-      const result = await agent.chat(value);
+      // 使用无状态 Agent，传入上下文
+      const result = await agentRef.current.chat(value, contextRef.current);
+      
+      // 添加助手消息到 UI
+      const assistantUIMessage: UIMessage = { role: 'assistant', content: result };
+      setUIMessages(prev => [...prev, assistantUIMessage]);
+      
+      // 添加助手消息到上下文（保持历史连续性）
       const assistantMessage: Message = { role: 'assistant', content: result };
-      setMessages(prev => [...prev, assistantMessage]);
+      contextRef.current.messages.push(assistantMessage);
+      
     } catch (error) {
-      const errorMessage: Message = { 
-        role: 'assistant', 
-        content: `Error: ${(error as Error).message}` 
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      const errorContent = `Error: ${(error as Error).message}`;
+      const errorUIMessage: UIMessage = { role: 'assistant', content: errorContent };
+      setUIMessages(prev => [...prev, errorUIMessage]);
     } finally {
       setIsLoading(false);
     }
-  }, [agent, debug]);
+  }, [debug]);
 
   // 处理初始消息
   useEffect(() => {
-    if (initialMessage && !initialMessageSent.current) {
+    if (initialMessage && !initialMessageSent.current && !isInitializing && agentRef.current) {
       initialMessageSent.current = true;
       handleSubmit(initialMessage);
     }
-  }, [initialMessage, handleSubmit]);
+  }, [initialMessage, handleSubmit, isInitializing]);
+
+  // 初始化中
+  if (isInitializing) {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <Box>
+          <Text color="yellow">
+            <Spinner type="dots" />
+          </Text>
+          <Text color="yellow"> Initializing Agent...</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  // 初始化失败
+  if (initError) {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <Text color="red">❌ Agent initialization failed:</Text>
+        <Text color="red">{initError}</Text>
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -106,7 +178,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
 
       {/* 消息历史 */}
       <Box flexDirection="column" marginBottom={1}>
-        {messages.map((msg, index) => (
+        {uiMessages.map((msg, index) => (
           <Box key={index} marginBottom={1}>
             <Text color={msg.role === 'user' ? 'green' : 'blue'}>
               {msg.role === 'user' ? '> ' : '🤖 '}
