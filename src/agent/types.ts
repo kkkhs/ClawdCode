@@ -52,10 +52,30 @@ export interface Message {
 export type PermissionMode = 'default' | 'autoEdit' | 'yolo' | 'plan';
 
 /**
+ * 确认详情
+ */
+export interface ConfirmationDetails {
+  title: string;
+  message: string;
+  details?: string;
+  risks?: string[];
+  affectedFiles?: string[];
+}
+
+/**
+ * 确认响应
+ */
+export interface ConfirmationResponse {
+  approved: boolean;
+  reason?: string;
+  scope?: 'once' | 'session';
+}
+
+/**
  * 确认处理器
  */
 export interface ConfirmationHandler {
-  confirm: (message: string) => Promise<boolean>;
+  requestConfirmation(details: ConfirmationDetails): Promise<ConfirmationResponse>;
 }
 
 /**

@@ -88,7 +88,7 @@ clawdcode/
 | 04 | Agent 类设计、无状态架构、核心执行循环 | ✅ 已完成 → [文档](04-agent-core.md) |
 | 05 | 系统提示词、Plan 模式提示词、工具提示词、压缩提示词 | ✅ 已完成 → [文档](05-system-prompt.md) |
 | 06 | 工具抽象、内置工具、工具注册机制 | ✅ 已完成 → [文档](06-tool-system.md) |
-| 07 | 执行管道、权限模型、确认机制 | ⏳ 待提供 |
+| 07 | 执行管道、权限模型、确认机制 | ✅ 已完成 → [文档](07-execution-pipeline.md) |
 | 08 | 消息历史、Token 统计、自动压缩策略 | ⏳ 待提供 |
 
 ### 第三部分：进阶篇
@@ -149,10 +149,8 @@ clawdcode/
 - [x] 第 03 章：CLI 入口 ✅ (yargs + 中间件 + ErrorBoundary)
 - [x] 第 04 章：Agent 核心 ✅ (无状态设计 + Agentic Loop)
 - [x] 第 05 章：System Prompt ✅ (四层架构 + Plan 模式)
-- [x] 第 06 章：工具系统 ✅ (createTool + Registry + Read/Glob/Grep)
-- [ ] 第 05 章：提示词系统
-- [ ] 第 06 章：工具系统
-- [ ] 第 07 章：执行管道
+- [x] 第 06 章：工具系统 ✅ (createTool + Registry + 6 个内置工具)
+- [x] 第 07 章：执行管道 ✅ (七阶段管道 + 权限模型 + 确认机制)
 - [ ] 第 08 章：上下文管理
 - [ ] 第 09 章：UI 系统
 - [ ] 第 10 章：MCP 协议

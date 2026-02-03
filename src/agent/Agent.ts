@@ -23,6 +23,15 @@ import type {
 import { createChatService } from '../services/ChatService.js';
 import { buildSystemPrompt } from '../prompts/builder.js';
 import { createPlanModeReminder } from '../prompts/plan.js';
+import {
+  ExecutionPipeline,
+  ToolRegistry,
+  createToolRegistry,
+  getBuiltinTools,
+  PermissionMode,
+  type PipelineExecutionContext,
+} from '../tools/index.js';
+import { configManager } from '../config/ConfigManager.js';
 
 // ========== 常量 ==========
 
@@ -51,6 +60,10 @@ export class Agent {
   // 核心组件
   private chatService!: IChatService;
   private systemPrompt: string;
+  
+  // 工具系统
+  private toolRegistry!: ToolRegistry;
+  private executionPipeline!: ExecutionPipeline;
 
   /**
    * 私有构造函数，使用 Agent.create() 创建实例
@@ -109,8 +122,23 @@ export class Agent {
         model: this.config.model,
       });
 
-      // 3. 注册内置工具 [TODO: 第 6 章实现]
-      // await this.registerBuiltinTools();
+      // 3. 初始化工具系统
+      this.toolRegistry = createToolRegistry();
+      
+      // 注册内置工具
+      const builtinTools = getBuiltinTools();
+      for (const tool of builtinTools) {
+        this.toolRegistry.register(tool);
+      }
+
+      // 4. 创建执行管道（使用 settings.json 中的权限配置）
+      const permissionConfig = configManager.getPermissionConfig();
+      const defaultMode = configManager.getDefaultPermissionMode() as 'default' | 'autoEdit' | 'yolo' | 'plan';
+      
+      this.executionPipeline = new ExecutionPipeline(this.toolRegistry, {
+        permissions: permissionConfig,
+        defaultMode: this.mapPermissionMode(defaultMode),
+      });
 
       this.isInitialized = true;
     } catch (error) {
@@ -216,8 +244,17 @@ export class Agent {
     let recentRetries = 0;
     const allToolResults: ToolResult[] = [];
 
-    // 获取工具定义 [TODO: 第 6 章实现完整工具系统]
-    const tools: ToolDefinition[] = [];
+    // 获取工具定义
+    const mode = context.permissionMode === 'plan' ? 'plan' : undefined;
+    const functionDeclarations = this.toolRegistry.getFunctionDeclarationsByMode(mode);
+    const tools: ToolDefinition[] = functionDeclarations.map(fn => ({
+      type: 'function' as const,
+      function: {
+        name: fn.name,
+        description: fn.description,
+        parameters: fn.parameters as ToolDefinition['function']['parameters'],
+      },
+    }));
 
     // === 3. 核心循环 ===
     while (true) {
@@ -363,19 +400,80 @@ export class Agent {
   /**
    * 执行工具调用
    * 
-   * TODO: 第 6-7 章实现完整的工具执行管道
+   * 使用 ExecutionPipeline 的七阶段管道执行工具
    */
   private async executeToolCall(
     toolCall: ToolCall,
-    _context: ChatContext
+    context: ChatContext
   ): Promise<ToolResult> {
-    // 目前返回占位结果，完整实现在第 6-7 章
-    return {
-      success: false,
-      error: `工具 "${toolCall.function.name}" 尚未实现`,
-      displayContent: `[工具 ${toolCall.function.name} 待实现]`,
-      llmContent: `Error: Tool "${toolCall.function.name}" is not implemented yet.`,
+    // 解析工具参数
+    let params: Record<string, unknown>;
+    try {
+      params = JSON.parse(toolCall.function.arguments);
+    } catch {
+      return {
+        success: false,
+        error: `Invalid tool arguments: ${toolCall.function.arguments}`,
+        displayContent: `❌ Invalid arguments for ${toolCall.function.name}`,
+        llmContent: `Error: Failed to parse tool arguments as JSON.`,
+      };
+    }
+
+    // 构建执行上下文
+    const pipelineContext: PipelineExecutionContext = {
+      sessionId: context.sessionId,
+      workspaceRoot: process.cwd(),
+      permissionMode: this.mapPermissionMode(context.permissionMode),
+      signal: context.signal,
+      confirmationHandler: context.confirmationHandler,
+      messageId: toolCall.id,
     };
+
+    // 通过执行管道执行工具
+    const result = await this.executionPipeline.execute(
+      toolCall.function.name,
+      params,
+      pipelineContext
+    );
+
+    // 转换为 Agent 的 ToolResult 格式
+    return {
+      success: result.success,
+      displayContent: result.displayContent,
+      llmContent: result.llmContent,
+      error: result.error?.message,
+      metadata: result.metadata,
+    };
+  }
+
+  /**
+   * 映射权限模式
+   */
+  private mapPermissionMode(mode?: string): PermissionMode {
+    switch (mode) {
+      case 'autoEdit':
+        return PermissionMode.AUTO_EDIT;
+      case 'yolo':
+        return PermissionMode.YOLO;
+      case 'plan':
+        return PermissionMode.PLAN;
+      default:
+        return PermissionMode.DEFAULT;
+    }
+  }
+
+  /**
+   * 获取工具注册表
+   */
+  getToolRegistry(): ToolRegistry {
+    return this.toolRegistry;
+  }
+
+  /**
+   * 获取执行管道
+   */
+  getExecutionPipeline(): ExecutionPipeline {
+    return this.executionPipeline;
   }
 }
 

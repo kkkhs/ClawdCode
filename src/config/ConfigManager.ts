@@ -12,7 +12,13 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { Config, ConfigSchema, DEFAULT_CONFIG, ModelConfig } from './types.js';
+import {
+  Config,
+  ConfigSchema,
+  DEFAULT_CONFIG,
+  ModelConfig,
+  type PermissionConfig,
+} from './types.js';
 
 export class ConfigManager {
   private static instance: ConfigManager;
@@ -96,6 +102,7 @@ export class ConfigManager {
     }
   }
 
+
   /**
    * 应用环境变量
    */
@@ -158,6 +165,35 @@ export class ConfigManager {
       };
     }
 
+    // 合并权限配置（数组合并而非覆盖）
+    if (override.permissions || base.permissions) {
+      merged.permissions = {
+        allow: [
+          ...(base.permissions?.allow || []),
+          ...(override.permissions?.allow || []),
+        ],
+        deny: [
+          ...(base.permissions?.deny || []),
+          ...(override.permissions?.deny || []),
+        ],
+        ask: [
+          ...(base.permissions?.ask || []),
+          ...(override.permissions?.ask || []),
+        ],
+      };
+    }
+
+    // 其他字段使用后者覆盖
+    if (override.defaultPermissionMode) {
+      merged.defaultPermissionMode = override.defaultPermissionMode;
+    }
+    if (override.toolWhitelist) {
+      merged.toolWhitelist = override.toolWhitelist;
+    }
+    if (override.toolBlacklist) {
+      merged.toolBlacklist = override.toolBlacklist;
+    }
+
     return merged;
   }
 
@@ -180,6 +216,20 @@ export class ConfigManager {
    */
   getLoadedConfigPaths(): string[] {
     return [...this.configPaths];
+  }
+
+  /**
+   * 获取权限配置
+   */
+  getPermissionConfig(): PermissionConfig {
+    return this.config.permissions || { allow: [], deny: [], ask: [] };
+  }
+
+  /**
+   * 获取默认权限模式
+   */
+  getDefaultPermissionMode(): string {
+    return this.config.defaultPermissionMode || 'default';
   }
 
   /**
