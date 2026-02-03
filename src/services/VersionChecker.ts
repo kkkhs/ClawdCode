@@ -38,10 +38,43 @@ try {
 
 const PACKAGE_NAME = packageJson.name;
 const CURRENT_VERSION = packageJson.version;
-const NPM_REGISTRY_URL = 'https://registry.npmjs.org';
+const DEFAULT_NPM_REGISTRY_URL = 'https://registry.npmjs.org';
 const CACHE_TTL = 60 * 60 * 1000; // 1 小时
 const CACHE_DIR = path.join(os.homedir(), `.${PACKAGE_NAME}`);
 const CACHE_FILE = path.join(CACHE_DIR, 'version-cache.json');
+
+// ========== 读取用户 npm 配置 ==========
+
+/**
+ * 从用户 .npmrc 读取 registry 配置
+ * 优先级：项目 .npmrc > 用户 .npmrc > 默认值
+ */
+async function getNpmRegistry(): Promise<string> {
+  const npmrcLocations = [
+    path.join(process.cwd(), '.npmrc'),           // 项目级
+    path.join(os.homedir(), '.npmrc'),            // 用户级
+  ];
+
+  for (const npmrcPath of npmrcLocations) {
+    try {
+      const content = await fs.readFile(npmrcPath, 'utf-8');
+      // 匹配 registry=https://xxx 或 registry = https://xxx
+      const match = content.match(/^\s*registry\s*=\s*(.+?)\s*$/m);
+      if (match && match[1]) {
+        let registry = match[1].trim();
+        // 移除尾部斜杠
+        if (registry.endsWith('/')) {
+          registry = registry.slice(0, -1);
+        }
+        return registry;
+      }
+    } catch {
+      // 文件不存在或读取失败，继续尝试下一个
+    }
+  }
+
+  return DEFAULT_NPM_REGISTRY_URL;
+}
 
 // ========== 类型定义 ==========
 
@@ -130,7 +163,10 @@ async function fetchLatestVersion(): Promise<string | null> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
 
-    const response = await fetch(`${NPM_REGISTRY_URL}/${PACKAGE_NAME}/latest`, {
+    // 从用户配置读取 registry URL
+    const registryUrl = await getNpmRegistry();
+    
+    const response = await fetch(`${registryUrl}/${PACKAGE_NAME}/latest`, {
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
