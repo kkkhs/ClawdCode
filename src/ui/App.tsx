@@ -4,27 +4,39 @@
  * 使用 Ink (React for CLI) 构建终端界面
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import { SimpleAgent } from '../agent/SimpleAgent.js';
+import { ErrorBoundary } from './components/ErrorBoundary.js';
+import type { PermissionMode } from '../cli/types.js';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
-interface AppProps {
+export interface AppProps {
   apiKey: string;
   baseURL?: string;
   model?: string;
+  initialMessage?: string;
+  debug?: boolean;
+  permissionMode?: PermissionMode;
 }
 
-export const App: React.FC<AppProps> = ({ apiKey, baseURL, model }) => {
+const AppContent: React.FC<AppProps> = ({ 
+  apiKey, 
+  baseURL, 
+  model,
+  initialMessage,
+  debug,
+}) => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const initialMessageSent = useRef(false);
 
   const agent = new SimpleAgent({ apiKey, baseURL, model });
 
@@ -36,6 +48,10 @@ export const App: React.FC<AppProps> = ({ apiKey, baseURL, model }) => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+
+    if (debug) {
+      console.log('[DEBUG] Sending message:', value);
+    }
 
     try {
       const result = await agent.chat(value);
@@ -50,13 +66,22 @@ export const App: React.FC<AppProps> = ({ apiKey, baseURL, model }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [agent]);
+  }, [agent, debug]);
+
+  // 处理初始消息
+  useEffect(() => {
+    if (initialMessage && !initialMessageSent.current) {
+      initialMessageSent.current = true;
+      handleSubmit(initialMessage);
+    }
+  }, [initialMessage, handleSubmit]);
 
   return (
     <Box flexDirection="column" padding={1}>
       {/* 标题 */}
       <Box marginBottom={1}>
-        <Text bold color="cyan">🤖 ClawdCode - Hello World Agent</Text>
+        <Text bold color="cyan">🤖 ClawdCode - CLI Coding Agent</Text>
+        {debug && <Text color="gray"> [DEBUG]</Text>}
       </Box>
 
       {/* 消息历史 */}
@@ -94,5 +119,16 @@ export const App: React.FC<AppProps> = ({ apiKey, baseURL, model }) => {
         </Box>
       )}
     </Box>
+  );
+};
+
+/**
+ * App - 带有 ErrorBoundary 的主组件
+ */
+export const App: React.FC<AppProps> = (props) => {
+  return (
+    <ErrorBoundary>
+      <AppContent {...props} />
+    </ErrorBoundary>
   );
 };

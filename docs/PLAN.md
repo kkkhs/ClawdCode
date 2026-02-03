@@ -42,14 +42,21 @@ Coding Agent = LLM + System Prompt + Context + Tools
 clawdcode/
 ├── src/
 │   ├── agent/              # Agent 核心（无状态设计）
-│   │   ├── Agent.ts        # 主 Agent 类
+│   │   ├── SimpleAgent.ts  # 简单 Agent（第 2 章）
+│   │   ├── Agent.ts        # 主 Agent 类（待实现）
 │   │   └── types.ts        # 类型定义
+│   ├── cli/                # CLI 模块（第 3 章）
+│   │   ├── types.ts        # CLI 类型定义
+│   │   ├── config.ts       # yargs 选项配置
+│   │   ├── middleware.ts   # 中间件函数
+│   │   └── index.ts        # 模块导出
 │   ├── tools/              # 工具系统
 │   │   ├── builtin/        # 内置工具 (Read, Write, Edit, Bash, Grep, Glob)
 │   │   ├── registry/       # 工具注册表
 │   │   └── execution/      # 执行管道
 │   ├── ui/                 # UI 系统
 │   │   ├── components/     # React 组件
+│   │   │   └── ErrorBoundary.tsx  # 错误边界（第 3 章）
 │   │   └── App.tsx         # UI 入口
 │   ├── config/             # 配置管理
 │   ├── context/            # 上下文管理（消息历史、压缩）
@@ -72,7 +79,7 @@ clawdcode/
 |------|------|------|
 | 01 | 什么是 Coding Agent、Claude Code 的设计理念、核心架构概览 | ✅ 已完成 → [文档](01-coding-agent-overview.md) |
 | 02 | 技术栈选择、项目结构设计、开发环境搭建 | ✅ 已完成 → [文档](02-project-setup.md) |
-| 03 | yargs CLI 框架、中间件机制、启动流程详解 | ⏳ 待提供 |
+| 03 | yargs CLI 框架、中间件机制、启动流程详解 | ✅ 已完成 → [文档](03-cli-entry.md) |
 
 ### 第二部分：核心篇
 
@@ -139,7 +146,7 @@ clawdcode/
 
 - [x] 第 01 章：概念理解 ✅
 - [x] 第 02 章：项目初始化 ✅ (Hello World Agent 完成)
-- [ ] 第 03 章：CLI 入口
+- [x] 第 03 章：CLI 入口 ✅ (yargs + 中间件 + ErrorBoundary)
 - [ ] 第 04 章：Agent 核心
 - [ ] 第 05 章：提示词系统
 - [ ] 第 06 章：工具系统
