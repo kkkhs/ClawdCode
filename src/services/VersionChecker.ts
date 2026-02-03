@@ -10,17 +10,38 @@
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import { fileURLToPath } from 'url';
+
+// ========== 从 package.json 读取配置 ==========
+
+interface PackageJson {
+  name: string;
+  version: string;
+}
+
+// 获取 package.json 路径
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJsonPath = path.resolve(__dirname, '../../package.json');
+
+// 同步读取 package.json（仅在模块加载时执行一次）
+let packageJson: PackageJson;
+try {
+  const content = await fs.readFile(packageJsonPath, 'utf-8');
+  packageJson = JSON.parse(content) as PackageJson;
+} catch {
+  // 如果读取失败，使用默认值
+  packageJson = { name: 'clawdcode', version: '0.1.0' };
+}
 
 // ========== 配置常量 ==========
 
-const PACKAGE_NAME = 'clawdcode';
+const PACKAGE_NAME = packageJson.name;
+const CURRENT_VERSION = packageJson.version;
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org';
 const CACHE_TTL = 60 * 60 * 1000; // 1 小时
-const CACHE_DIR = path.join(os.homedir(), '.clawdcode');
+const CACHE_DIR = path.join(os.homedir(), `.${PACKAGE_NAME}`);
 const CACHE_FILE = path.join(CACHE_DIR, 'version-cache.json');
-
-// 当前版本（从 package.json 读取或硬编码）
-const CURRENT_VERSION = '0.1.0';
 
 // ========== 类型定义 ==========
 
