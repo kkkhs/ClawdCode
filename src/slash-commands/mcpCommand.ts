@@ -46,6 +46,7 @@ export const mcpCommand: SlashCommand = {
     // 没有配置任何 MCP 服务器
     if (stats.totalServers === 0) {
       return {
+        success: true,
         type: 'info',
         content: `## MCP 服务器状态
 
@@ -113,6 +114,7 @@ export const mcpCommand: SlashCommand = {
     output += '💡 **提示：** 使用 `/mcp tools` 查看所有工具，或 `/mcp <服务器名>` 查看详情\n';
 
     return {
+      success: true,
       type: 'success',
       content: output,
     };
@@ -127,6 +129,7 @@ async function handleToolsSubcommand(registry: McpRegistry): Promise<SlashComman
 
   if (tools.length === 0) {
     return {
+      success: true,
       type: 'info',
       content: '## MCP 工具\n\n📭 **没有可用的 MCP 工具**\n\n请确保至少有一个 MCP 服务器已连接。',
     };
@@ -146,6 +149,7 @@ async function handleToolsSubcommand(registry: McpRegistry): Promise<SlashComman
   }
 
   return {
+    success: true,
     type: 'success',
     content: output,
   };
@@ -200,6 +204,7 @@ function handleServerDetail(name: string, info: any): SlashCommandResult {
   }
 
   return {
+    success: true,
     type: 'success',
     content: output,
   };

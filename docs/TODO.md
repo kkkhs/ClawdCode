@@ -2,6 +2,29 @@
 
 > 记录各章节中提及但未实现的功能，等待后续章节补充。
 
+---
+
+## 第 12 章拆分计划
+
+原第 12 章内容较多（约 4200 行），拆分为以下 6 个小步骤：
+
+| 步骤 | 主题 | 包含内容 | 预估行数 |
+|------|------|---------|---------|
+| **12a** | Slash Commands | 命令注册、执行、模糊搜索、自定义命令（Markdown 定义）、`/compact` 等 | ~1080 |
+| **12b** | Hooks 系统 | 11 种事件类型、HookExecutor、`/hooks` 命令、HookManager 完整实现 | ~770 |
+| **12c** | Subagent 机制 | SubagentRegistry、SubagentExecutor、内置 Agent（Explore/Plan）、BackgroundAgentManager | ~422 |
+| **12d** | Skills 系统 | 渐进式披露、SkillRegistry、SkillLoader、SkillInstaller、Skill 工具 | ~412 |
+| **12e** | 插件系统 | PluginManifest、PluginLoader、PluginRegistry、命名空间、远程安装、扩展模式总结 | ~679 |
+| **12f** | IDE 集成 | VS Code 扩展、WebSocket 通信、IdeClient、IdeContext、多端扩展展望 | ~856 |
+
+**补充内容**（分散到各步骤）：
+- `doctor` / `update` 子命令 → 12a（Slash Commands）
+- `--mcp-config` CLI 参数 → 12a
+- `registerCleanup` (GracefulShutdown) → 12b（Hooks 的 SessionEnd 事件）
+- 交互式确认 UI → 12a（已有 ConfirmationPrompt，需集成到 SlashCommand 流程）
+
+---
+
 ## 第三章遗留
 
 | 功能 | 说明 | 依赖 | 计划章节 |
@@ -10,11 +33,11 @@
 | ~~`mergeRuntimeConfig`~~ | ~~合并 CLI 参数到运行时配置~~ | ~~RuntimeConfig 类型~~ | ✅ 第 11 章 |
 | ~~`appActions().setInitializationStatus`~~ | ~~设置初始化状态~~ | ~~Zustand actions~~ | ✅ 第 11 章 |
 | ~~子命令 `mcp`~~ | ~~MCP 服务器管理~~ | ~~MCP 模块~~ | ✅ 第 10 章 |
-| 子命令 `doctor` | 诊断命令 | 诊断模块 | 第 12 章 |
-| 子命令 `update` | 更新命令 | - | 第 12 章 |
-| `subagentRegistry` | Subagent 注册表 | Subagent 系统 | 第 12 章 |
-| `HookManager` | Hooks 管理器 | Hooks 系统 | 第 12 章 |
-| `registerCleanup` | 注册退出清理函数 | GracefulShutdown | 第 12 章 |
+| 子命令 `doctor` | 诊断命令 | 诊断模块 | 第 12a 章 |
+| 子命令 `update` | 更新命令 | - | 第 12a 章 |
+| `subagentRegistry` | Subagent 注册表 | Subagent 系统 | 第 12c 章 |
+| `HookManager` | Hooks 管理器 | Hooks 系统 | 第 12b 章 |
+| `registerCleanup` | 注册退出清理函数 | GracefulShutdown | 第 12b 章 |
 | `BackgroundShellManager` | 后台 Shell 管理 | Shell 工具 | 第 6 章 |
 | ~~`McpRegistry`~~ | ~~MCP 注册表~~ | ~~MCP 模块~~ | ✅ 第 10 章 |
 
@@ -57,8 +80,8 @@
 
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
-| HookManager 完整实现 | Hooks 管理器完整版 | - | 第 12 章 |
-| 交互式确认 UI | 集成 ConfirmationPrompt 到主 UI | Store 集成 | 第 12 章 |
+| HookManager 完整实现 | Hooks 管理器完整版（11 种事件） | - | 第 12b 章 |
+| 交互式确认 UI | 集成 ConfirmationPrompt 到 SlashCommand 流程 | Store 集成 | 第 12a 章 |
 
 ## 第九章遗留
 
@@ -72,7 +95,7 @@
 
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
-| `/compact` 命令 | 用户手动触发压缩 | slash-commands 系统 | 第 9 章 |
+| ~~`/compact` 命令~~ | ~~用户手动触发压缩~~ | ~~slash-commands 系统~~ | ✅ 第 12a 章（基础版） |
 | ContextFilter | 上下文过滤器 | - | 可选优化 |
 | ~~Agent 集成 ContextManager~~ | ~~Agent 使用上下文管理（含会话持久化保存）~~ | ~~UI/Store~~ | ✅ 第 11 章 |
 
@@ -80,11 +103,11 @@
 
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
-| `loadMcpConfigFromCli` | 从 CLI 参数 `--mcp-config` 加载临时 MCP 配置 | Store 集成 | 第 12 章 |
+| `loadMcpConfigFromCli` | 从 CLI 参数 `--mcp-config` 加载临时 MCP 配置 | Store 集成 | 第 12a 章（TODO） |
 | `OAuthProvider` | OAuth 2.0 认证流程（需要浏览器交互） | - | 可选优化 |
 | `src/mcp/auth/` 目录 | OAuth 认证相关文件 | OAuthProvider | 可选优化 |
-| `--mcp-config` CLI 参数 | CLI 传递临时 MCP 配置 | loadMcpConfigFromCli | 第 12 章 |
-| Slash 命令集成到 UI | 在 UI 中处理 `/mcp` 等 slash 命令 | UI 系统 | 第 12 章 |
+| `--mcp-config` CLI 参数 | CLI 传递临时 MCP 配置 | loadMcpConfigFromCli | 第 12a 章（TODO） |
+| ~~Slash 命令集成到 UI~~ | ~~在 UI 中处理 `/mcp`、`/compact` 等 slash 命令~~ | ~~UI 系统~~ | ✅ 第 12a 章 |
 
 ## 第十一章遗留
 
@@ -165,3 +188,13 @@
 | 退出时会话恢复提示 | 第 11 章 | 2026-02-04 |
 | useCtrlCHandler onBeforeExit 回调 | 第 11 章 | 2026-02-04 |
 | ExitMessage 退出提示组件 | 第 11 章 | 2026-02-04 |
+| Slash 命令类型定义 | 第 12a 章 | 2026-02-04 |
+| 命令注册中心 (index.ts) | 第 12a 章 | 2026-02-04 |
+| 模糊匹配 (fuse.js) | 第 12a 章 | 2026-02-04 |
+| 内置命令 (help, clear, compact, version, model, theme, status) | 第 12a 章 | 2026-02-04 |
+| 自定义命令加载器 (CustomCommandLoader) | 第 12a 章 | 2026-02-04 |
+| 自定义命令执行器 (CustomCommandExecutor) | 第 12a 章 | 2026-02-04 |
+| 自定义命令注册中心 (CustomCommandRegistry) | 第 12a 章 | 2026-02-04 |
+| ClawdInterface Slash 命令集成 | 第 12a 章 | 2026-02-04 |
+| 命令补全建议组件 (CommandSuggestions) | 第 12a 章 | 2026-02-04 |
+| 命令补全 UI (↑↓ 选择, Tab 补全) | 第 12a 章 | 2026-02-04 |

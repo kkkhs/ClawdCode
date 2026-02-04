@@ -25,8 +25,10 @@ import {
   useTokenUsage,
   sessionActions,
   focusActions,
+  commandActions,
   FocusId,
   useCurrentFocus,
+  usePendingCommands,
 } from '../../store/index.js';
 
 // Context
@@ -45,6 +47,7 @@ import { useConfirmation } from '../hooks/useConfirmation.js';
 import { useTerminalWidth } from '../hooks/useTerminalWidth.js';
 import { useCtrlCHandler } from '../hooks/useCtrlCHandler.js';
 import { useInputBuffer } from '../hooks/useInputBuffer.js';
+import { useCommandHistory } from '../hooks/useCommandHistory.js';
 
 // Theme
 import { themeManager } from '../themes/ThemeManager.js';
@@ -78,6 +81,7 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   const sessionId = useSessionId();
   const tokenUsage = useTokenUsage();
   const currentFocus = useCurrentFocus();
+  const pendingCommands = usePendingCommands();
 
   // ==================== Local State & Refs ====================
   const terminalWidth = useTerminalWidth();
@@ -93,6 +97,7 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   // ==================== Hooks ====================
   const { confirmationState, handleResponse } = useConfirmation();
   const inputBuffer = useInputBuffer('', 0);
+  const commandHistory = useCommandHistory();
 
   // Ctrl+C handler
   useCtrlCHandler({
@@ -206,17 +211,68 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
     }
   }, [confirmationState.isVisible, activeModal]);
 
-  // ==================== Command Handler ====================
-  const handleSubmit = useCallback(async (value: string) => {
-    if (!value.trim() || !agentRef.current || !contextManagerRef.current) return;
+  // ==================== Command History Handlers ====================
+  const handleArrowUp = useCallback(() => {
+    const prevCommand = commandHistory.getPreviousCommand();
+    if (prevCommand !== null) {
+      inputBuffer.setValue(prevCommand);
+      inputBuffer.setCursorPosition(prevCommand.length);
+    }
+  }, [commandHistory, inputBuffer]);
+
+  const handleArrowDown = useCallback(() => {
+    const nextCommand = commandHistory.getNextCommand();
+    if (nextCommand !== null) {
+      inputBuffer.setValue(nextCommand);
+      inputBuffer.setCursorPosition(nextCommand.length);
+    }
+  }, [commandHistory, inputBuffer]);
+
+  // ==================== Core Command Processor ====================
+  /**
+   * 处理单个命令的核心逻辑（包括 slash 命令和普通消息）
+   */
+  const processCommand = useCallback(async (value: string) => {
+    // 检查是否是 slash 命令
+    const { isSlashCommand, executeSlashCommand } = await import('../../slash-commands/index.js');
+    
+    if (isSlashCommand(value)) {
+      // 执行 slash 命令
+      sessionActions().addUserMessage(value);
+      sessionActions().setThinking(true);
+      
+      try {
+        const result = await executeSlashCommand(value, {
+          cwd: process.cwd(),
+          sessionId,
+          messages,
+        });
+        
+        // 显示命令结果
+        if (result.content) {
+          sessionActions().addAssistantMessage(result.content);
+        } else if (result.message) {
+          sessionActions().addAssistantMessage(result.message);
+        } else if (result.error) {
+          sessionActions().addAssistantMessage(`❌ ${result.error}`);
+        }
+      } catch (error) {
+        sessionActions().addAssistantMessage(
+          `❌ 命令执行失败: ${error instanceof Error ? error.message : String(error)}`
+        );
+      } finally {
+        sessionActions().setThinking(false);
+      }
+      return;
+    }
+
+    // 正常消息处理
+    if (!agentRef.current || !contextManagerRef.current) return;
 
     const ctxManager = contextManagerRef.current;
 
     // 添加用户消息到 UI Store
     sessionActions().addUserMessage(value);
-
-    // 清空输入
-    inputBuffer.clear();
 
     // 设置 thinking 状态
     sessionActions().setThinking(true);
@@ -287,7 +343,51 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
     } finally {
       sessionActions().setThinking(false);
     }
-  }, [debug, inputBuffer, model, sessionId, tokenUsage.inputTokens, tokenUsage.outputTokens]);
+  }, [debug, model, sessionId, messages, tokenUsage.inputTokens, tokenUsage.outputTokens]);
+
+  // ==================== Queue Processor ====================
+  /**
+   * 处理命令队列中的下一个命令
+   */
+  const processQueue = useCallback(async () => {
+    const nextCommand = commandActions().dequeueCommand();
+    if (nextCommand) {
+      if (debug) {
+        console.log('[DEBUG] Processing queued command:', nextCommand);
+      }
+      await processCommand(nextCommand);
+    }
+  }, [processCommand, debug]);
+
+  // 当 isThinking 变为 false 时，检查队列并处理下一个命令
+  useEffect(() => {
+    if (!isThinking && pendingCommands.length > 0) {
+      processQueue();
+    }
+  }, [isThinking, pendingCommands.length, processQueue]);
+
+  // ==================== Command Handler ====================
+  const handleSubmit = useCallback(async (value: string) => {
+    if (!value.trim()) return;
+
+    // 添加到命令历史
+    commandHistory.addToHistory(value);
+
+    // 清空输入
+    inputBuffer.clear();
+
+    // 如果正在处理中，将命令加入队列
+    if (isThinking) {
+      commandActions().enqueueCommand(value);
+      if (debug) {
+        console.log('[DEBUG] Command queued:', value, 'Queue size:', pendingCommands.length + 1);
+      }
+      return;
+    }
+
+    // 否则直接处理
+    await processCommand(value);
+  }, [inputBuffer, commandHistory, isThinking, processCommand, debug, pendingCommands.length]);
 
   // ==================== Initial Message ====================
   useEffect(() => {
@@ -366,25 +466,49 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
 
         {/* 加载指示器 */}
         {isThinking && <LoadingIndicator />}
+
+        {/* 队列中的命令预览 */}
+        {pendingCommands.length > 0 && (
+          <Box flexDirection="column" marginTop={1}>
+            <Text color={theme.colors.text.muted} dimColor>
+              ── Queued ({pendingCommands.length}) ──
+            </Text>
+            {pendingCommands.map((cmd, index) => (
+              <Box key={index} marginLeft={2}>
+                <Text color={theme.colors.text.muted} dimColor>
+                  {index + 1}. {cmd.length > 60 ? cmd.slice(0, 57) + '...' : cmd}
+                </Text>
+              </Box>
+            ))}
+          </Box>
+        )}
       </Box>
 
-      {/* 输入区域 */}
-      {!isThinking && (
-        <InputArea
-          input={inputBuffer.value}
-          cursorPosition={inputBuffer.cursorPosition}
-          onChange={inputBuffer.setValue}
-          onChangeCursorPosition={inputBuffer.setCursorPosition}
-          onSubmit={handleSubmit}
-          isProcessing={isThinking}
-        />
-      )}
+      {/* 输入区域 - 始终可见，处理中时显示队列提示 */}
+      <InputArea
+        input={inputBuffer.value}
+        cursorPosition={inputBuffer.cursorPosition}
+        onChange={inputBuffer.setValue}
+        onChangeCursorPosition={inputBuffer.setCursorPosition}
+        onSubmit={handleSubmit}
+        onArrowUp={handleArrowUp}
+        onArrowDown={handleArrowDown}
+        isProcessing={isThinking}
+        placeholder={
+          isThinking
+            ? pendingCommands.length > 0
+              ? `Queued: ${pendingCommands.length} command(s). Type to add more...`
+              : 'Processing... Type to queue next command'
+            : 'Type a message... (Ctrl+C to exit)'
+        }
+      />
 
       {/* 状态栏 */}
       <ChatStatusBar
         model={model}
         sessionId={sessionId}
         messageCount={messages.length}
+        queuedCommands={pendingCommands.length}
         themeName={theme.name}
         tokenUsage={{
           input: tokenUsage.inputTokens,

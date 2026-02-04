@@ -21,6 +21,8 @@ interface ChatStatusBarProps {
   };
   /** 消息数量 */
   messageCount?: number;
+  /** 队列中的命令数量 */
+  queuedCommands?: number;
   /** 当前主题 */
   themeName?: string;
   /** 是否显示 */
@@ -48,6 +50,7 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
   sessionId,
   tokenUsage,
   messageCount,
+  queuedCommands,
   themeName,
   isVisible = true,
 }) => {
@@ -65,6 +68,15 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
 
   if (messageCount !== undefined) {
     items.push({ label: '💬', value: String(messageCount) });
+  }
+
+  // 显示队列中的命令数量
+  if (queuedCommands !== undefined && queuedCommands > 0) {
+    items.push({
+      label: '📋',
+      value: `${queuedCommands} queued`,
+      color: theme.colors.warning,
+    });
   }
 
   if (tokenUsage) {

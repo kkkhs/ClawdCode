@@ -52,10 +52,13 @@ export default defineConfig({
         },
         {
           text: '进阶篇',
-          collapsed: true,
+          collapsed: false,
           items: [
             { text: '第 9 章：UI 系统', link: '/guide/chapter-09' },
             { text: '第 10 章：MCP 协议', link: '/guide/chapter-10' },
+            { text: '第 11 章：状态管理', link: '/guide/chapter-11' },
+            { text: '第 11b 章：命令历史与队列', link: '/guide/chapter-11b' },
+            { text: '第 12a 章：Slash Commands', link: '/guide/chapter-12a' },
           ]
         }
       ]

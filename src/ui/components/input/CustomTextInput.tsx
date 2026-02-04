@@ -22,6 +22,10 @@ interface CustomTextInputProps {
   onSubmit?: (value: string) => void;
   /** 粘贴回调 */
   onPaste?: (text: string) => { prompt?: string } | void;
+  /** 上箭头回调（浏览历史） */
+  onArrowUp?: () => void;
+  /** 下箭头回调（浏览历史） */
+  onArrowDown?: () => void;
   /** 占位符 */
   placeholder?: string;
   /** 焦点 ID */
@@ -49,6 +53,8 @@ export const CustomTextInput: React.FC<CustomTextInputProps> = ({
   onChangeCursorPosition,
   onSubmit,
   onPaste,
+  onArrowUp,
+  onArrowDown,
   placeholder = '',
   focusId = FocusId.MAIN_INPUT,
   disabled = false,
@@ -161,6 +167,18 @@ export const CustomTextInput: React.FC<CustomTextInputProps> = ({
         if (cursorPosition < value.length) {
           onChangeCursorPosition(cursorPosition + 1);
         }
+        return;
+      }
+
+      // 上箭头：浏览历史（上一条命令）
+      if (key.upArrow) {
+        onArrowUp?.();
+        return;
+      }
+
+      // 下箭头：浏览历史（下一条命令）
+      if (key.downArrow) {
+        onArrowDown?.();
         return;
       }
 
