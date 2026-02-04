@@ -1,10 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="56" fill="url(#gradient)" stroke="#1a1a2e" stroke-width="4"/>
+  
+  <!-- Terminal Window -->
+  <rect x="25" y="35" width="70" height="50" rx="6" fill="#1a1a2e"/>
+  
+  <!-- Terminal Header -->
+  <rect x="25" y="35" width="70" height="12" rx="6" fill="#2d2d44"/>
+  <circle cx="34" cy="41" r="3" fill="#ff5f56"/>
+  <circle cx="44" cy="41" r="3" fill="#ffbd2e"/>
+  <circle cx="54" cy="41" r="3" fill="#27ca40"/>
+  
+  <!-- Cursor/Prompt -->
+  <text x="32" y="62" font-family="monospace" font-size="14" fill="#4ade80">$</text>
+  
+  <!-- Code Lines -->
+  <rect x="42" y="54" width="35" height="3" rx="1.5" fill="#818cf8"/>
+  <rect x="32" y="65" width="45" height="3" rx="1.5" fill="#67e8f9"/>
+  <rect x="32" y="74" width="25" height="3" rx="1.5" fill="#fbbf24"/>
+  
+  <!-- Claw Mark (stylized) -->
+  <path d="M85 25 L95 35 M90 25 L100 35 M95 25 L105 35" 
+        stroke="#f97316" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Gradient Definition -->
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#bd34fe;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#41d1ff;stop-opacity:1" />
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
     </linearGradient>
   </defs>
-  <rect x="10" y="10" width="80" height="80" rx="15" fill="url(#grad)"/>
-  <text x="50" y="65" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="white" text-anchor="middle">C</text>
 </svg>
