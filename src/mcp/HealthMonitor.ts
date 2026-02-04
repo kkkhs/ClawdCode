@@ -6,6 +6,7 @@
 import { EventEmitter } from 'events';
 import type { HealthCheckConfig, McpClientInterface } from './types.js';
 import { McpConnectionStatus, DEFAULT_HEALTH_CHECK_CONFIG } from './types.js';
+import { createDebugLogger } from '../utils/debug.js';
 
 /**
  * 健康监控器
@@ -16,12 +17,14 @@ export class HealthMonitor extends EventEmitter {
   private isRunning = false;
   private lastCheckTime: Date | null = null;
   private lastCheckResult: 'healthy' | 'unhealthy' | 'unknown' = 'unknown';
+  private debug: ReturnType<typeof createDebugLogger>;
 
   constructor(
     private client: McpClientInterface,
     private config: HealthCheckConfig = DEFAULT_HEALTH_CHECK_CONFIG
   ) {
     super();
+    this.debug = createDebugLogger(`HealthMonitor:${client.serverName}`);
   }
 
   /**
@@ -36,8 +39,8 @@ export class HealthMonitor extends EventEmitter {
     this.consecutiveFailures = 0;
     this.scheduleNextCheck();
 
-    console.log(
-      `[HealthMonitor:${this.client.serverName}] 健康监控已启动`,
+    this.debug.log(
+      `健康监控已启动`,
       `(间隔: ${this.config.intervalMs}ms, 超时: ${this.config.timeoutMs}ms)`
     );
   }
@@ -51,7 +54,7 @@ export class HealthMonitor extends EventEmitter {
       clearTimeout(this.checkTimer);
       this.checkTimer = null;
     }
-    console.log(`[HealthMonitor:${this.client.serverName}] 健康监控已停止`);
+    this.debug.log(`健康监控已停止`);
   }
 
   /**
@@ -119,16 +122,16 @@ export class HealthMonitor extends EventEmitter {
       this.consecutiveFailures++;
       this.lastCheckResult = 'unhealthy';
 
-      console.warn(
-        `[HealthMonitor:${this.client.serverName}] 健康检查失败`,
+      this.debug.warn(
+        `健康检查失败`,
         `(${this.consecutiveFailures}/${this.config.maxFailures}):`,
         (error as Error).message
       );
 
       // 超过最大失败次数，触发不健康事件
       if (this.consecutiveFailures >= this.config.maxFailures) {
-        console.error(
-          `[HealthMonitor:${this.client.serverName}] 服务器不健康，连续失败 ${this.consecutiveFailures} 次`
+        this.debug.error(
+          `服务器不健康，连续失败 ${this.consecutiveFailures} 次`
         );
         this.emit('unhealthy', this.consecutiveFailures, error);
       }

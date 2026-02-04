@@ -16,6 +16,7 @@ import {
   type McpClientInterface,
 } from './types.js';
 import { HealthMonitor } from './HealthMonitor.js';
+import { createDebugLogger } from '../utils/debug.js';
 
 /**
  * 错误分类函数
@@ -87,6 +88,9 @@ export class McpClient extends EventEmitter implements McpClientInterface {
 
   // 服务器名称（用于日志）
   public readonly serverName: string;
+  
+  // Debug logger
+  private debug: ReturnType<typeof createDebugLogger>;
 
   constructor(
     private config: McpServerConfig,
@@ -95,6 +99,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
   ) {
     super();
     this.serverName = serverName || 'default';
+    this.debug = createDebugLogger(`McpClient:${this.serverName}`);
 
     // 初始化健康监控
     if (healthCheckConfig?.enabled) {
@@ -156,22 +161,22 @@ export class McpClient extends EventEmitter implements McpClientInterface {
         lastError = error as Error;
         const classified = classifyError(error);
 
-        console.warn(
-          `[McpClient:${this.serverName}] 连接失败（${attempt}/${maxRetries}）:`,
+        this.debug.warn(
+          `连接失败（${attempt}/${maxRetries}）:`,
           classified.type,
           (error as Error).message
         );
 
         // 永久性错误不重试
         if (!classified.isRetryable) {
-          console.error(`[McpClient:${this.serverName}] 检测到永久性错误，放弃重试`);
+          this.debug.error(`检测到永久性错误，放弃重试`);
           throw error;
         }
 
         // 指数退避重试
         if (attempt < maxRetries) {
           const delay = initialDelay * Math.pow(2, attempt - 1);
-          console.log(`[McpClient:${this.serverName}] ${delay}ms 后重试...`);
+          this.debug.log(`${delay}ms 后重试...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -223,8 +228,8 @@ export class McpClient extends EventEmitter implements McpClientInterface {
         this.healthMonitor.start();
       }
 
-      console.log(
-        `[McpClient:${this.serverName}] 已连接到服务器:`,
+      this.debug.log(
+        `已连接到服务器:`,
         this.serverInfo.name,
         `v${this.serverInfo.version}`,
         `(${this.tools.size} 个工具)`
@@ -339,7 +344,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
         this.emit('toolsUpdated', this.availableTools);
       }
     } catch (error) {
-      console.error(`[McpClient:${this.serverName}] 加载工具列表失败:`, error);
+      this.debug.error(`加载工具列表失败:`, error);
       throw error;
     }
   }
@@ -374,7 +379,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
 
       return result as McpToolCallResponse;
     } catch (error) {
-      console.error(`[McpClient:${this.serverName}] 调用工具 "${name}" 失败:`, error);
+      this.debug.error(`调用工具 "${name}" 失败:`, error);
       throw error;
     }
   }
@@ -401,7 +406,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
       try {
         await this.sdkClient.close();
       } catch (error) {
-        console.warn(`[McpClient:${this.serverName}] 关闭连接时出错:`, error);
+        this.debug.warn(`关闭连接时出错:`, error);
       }
       this.sdkClient = null;
     }
@@ -410,7 +415,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
     this.setStatus(McpConnectionStatus.DISCONNECTED);
     this.emit('disconnected');
 
-    console.log(`[McpClient:${this.serverName}] 已断开连接`);
+    this.debug.log(`已断开连接`);
   }
 
   /**
@@ -422,7 +427,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
     }
 
     if (this.status === McpConnectionStatus.CONNECTED) {
-      console.warn(`[McpClient:${this.serverName}] 检测到意外断连，准备重连...`);
+      this.debug.warn(`检测到意外断连，准备重连...`);
       this.setStatus(McpConnectionStatus.ERROR);
       this.emit('error', new Error('MCP服务器连接意外关闭'));
       this.scheduleReconnect();
@@ -439,7 +444,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
     }
 
     if (this.reconnectAttempts >= DEFAULT_CONNECTION_CONFIG.maxReconnectAttempts) {
-      console.error(`[McpClient:${this.serverName}] 达到最大重连次数，放弃重连`);
+      this.debug.error(`达到最大重连次数，放弃重连`);
       this.emit('reconnectFailed');
       return;
     }
@@ -451,8 +456,8 @@ export class McpClient extends EventEmitter implements McpClientInterface {
     );
     this.reconnectAttempts++;
 
-    console.log(
-      `[McpClient:${this.serverName}] 将在 ${delay}ms 后进行第 ${this.reconnectAttempts} 次重连...`
+    this.debug.log(
+      `将在 ${delay}ms 后进行第 ${this.reconnectAttempts} 次重连...`
     );
 
     this.emit('reconnecting', this.reconnectAttempts);
@@ -468,7 +473,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
         this.setStatus(McpConnectionStatus.DISCONNECTED);
         await this.doConnect();
 
-        console.log(`[McpClient:${this.serverName}] 重连成功`);
+        this.debug.log(`重连成功`);
         this.reconnectAttempts = 0;
         this.emit('reconnected');
       } catch (error) {
@@ -476,7 +481,7 @@ export class McpClient extends EventEmitter implements McpClientInterface {
         if (classified.isRetryable) {
           this.scheduleReconnect();
         } else {
-          console.error(`[McpClient:${this.serverName}] 检测到永久性错误，停止重连`);
+          this.debug.error(`检测到永久性错误，停止重连`);
           this.emit('reconnectFailed');
         }
       }

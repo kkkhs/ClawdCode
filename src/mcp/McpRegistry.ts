@@ -14,6 +14,7 @@ import {
 import { McpClient } from './McpClient.js';
 import { createMcpTool } from './createMcpTool.js';
 import type { Tool } from '../tools/types.js';
+import { mcpRegistryDebug } from '../utils/debug.js';
 
 /**
  * MCP 注册中心（单例）
@@ -52,7 +53,7 @@ export class McpRegistry extends EventEmitter {
   async registerServer(name: string, config: McpServerConfig): Promise<void> {
     // 检查是否已禁用
     if (config.enabled === false) {
-      console.log(`[McpRegistry] 服务器 "${name}" 已禁用，跳过注册`);
+      mcpRegistryDebug.log(`服务器 "${name}" 已禁用，跳过注册`);
       return;
     }
 
@@ -74,13 +75,13 @@ export class McpRegistry extends EventEmitter {
     this.servers.set(name, serverInfo);
     this.emit('serverRegistered', name, serverInfo);
 
-    console.log(`[McpRegistry] 已注册服务器: ${name} (${config.type})`);
+    mcpRegistryDebug.log(`已注册服务器: ${name} (${config.type})`);
 
     // 尝试连接
     try {
       await this.connectServer(name);
     } catch (error) {
-      console.warn(`[McpRegistry] 服务器 "${name}" 连接失败:`, (error as Error).message);
+      mcpRegistryDebug.warn(`服务器 "${name}" 连接失败:`, (error as Error).message);
     }
   }
 
@@ -90,7 +91,7 @@ export class McpRegistry extends EventEmitter {
   async registerServers(servers: Record<string, McpServerConfig>): Promise<void> {
     const promises = Object.entries(servers).map(([name, config]) =>
       this.registerServer(name, config).catch(error => {
-        console.warn(`[McpRegistry] 注册服务器 "${name}" 失败:`, (error as Error).message);
+        mcpRegistryDebug.warn(`注册服务器 "${name}" 失败:`, (error as Error).message);
         return error;
       })
     );
@@ -108,7 +109,7 @@ export class McpRegistry extends EventEmitter {
     }
 
     if (serverInfo.status === McpConnectionStatus.CONNECTED) {
-      console.log(`[McpRegistry] 服务器 "${name}" 已连接`);
+      mcpRegistryDebug.log(`服务器 "${name}" 已连接`);
       return;
     }
 
@@ -149,7 +150,7 @@ export class McpRegistry extends EventEmitter {
     await serverInfo.client.disconnect().catch(() => {});
     this.servers.delete(name);
 
-    console.log(`[McpRegistry] 已移除服务器: ${name}`);
+    mcpRegistryDebug.log(`已移除服务器: ${name}`);
   }
 
   /**
@@ -191,16 +192,16 @@ export class McpRegistry extends EventEmitter {
 
     client.on('reconnecting', (attempt: number) => {
       serverInfo.status = McpConnectionStatus.CONNECTING;
-      console.log(`[McpRegistry] 服务器 "${name}" 正在重连 (第 ${attempt} 次)`);
+      mcpRegistryDebug.log(`服务器 "${name}" 正在重连 (第 ${attempt} 次)`);
     });
 
     client.on('reconnected', () => {
-      console.log(`[McpRegistry] 服务器 "${name}" 重连成功`);
+      mcpRegistryDebug.log(`服务器 "${name}" 重连成功`);
     });
 
     client.on('reconnectFailed', () => {
       serverInfo.status = McpConnectionStatus.ERROR;
-      console.error(`[McpRegistry] 服务器 "${name}" 重连失败`);
+      mcpRegistryDebug.error(`服务器 "${name}" 重连失败`);
     });
   }
 
@@ -243,8 +244,8 @@ export class McpRegistry extends EventEmitter {
             );
             tools.push(tool);
           } catch (error) {
-            console.warn(
-              `[McpRegistry] 创建工具 "${mcpTool.name}" 失败:`,
+            mcpRegistryDebug.warn(
+              `创建工具 "${mcpTool.name}" 失败:`,
               (error as Error).message
             );
           }

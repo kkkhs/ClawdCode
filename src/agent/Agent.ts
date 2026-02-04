@@ -33,6 +33,7 @@ import {
 } from '../tools/index.js';
 import { configManager } from '../config/ConfigManager.js';
 import { McpRegistry } from '../mcp/index.js';
+import { agentDebug } from '../utils/debug.js';
 
 // ========== 常量 ==========
 
@@ -496,7 +497,7 @@ export class Agent {
         return; // 没有配置任何 MCP 服务器
       }
 
-      console.log(`[Agent] 正在加载 MCP 服务器 (${Object.keys(mcpServers).length} 个)...`);
+      agentDebug.log(`正在加载 MCP 服务器 (${Object.keys(mcpServers).length} 个)...`);
 
       // 2. 注册并连接服务器
       const registry = McpRegistry.getInstance();
@@ -510,20 +511,20 @@ export class Agent {
           try {
             this.toolRegistry.register(tool);
           } catch (error) {
-            console.warn(`[Agent] 注册 MCP 工具 "${tool.name}" 失败:`, (error as Error).message);
+            agentDebug.warn(`注册 MCP 工具 "${tool.name}" 失败:`, (error as Error).message);
           }
         }
-        console.log(`[Agent] 已加载 ${mcpTools.length} 个 MCP 工具`);
+        agentDebug.log(`已加载 ${mcpTools.length} 个 MCP 工具`);
       }
 
       // 4. 监听工具更新事件
       registry.on('toolsUpdated', async () => {
         // 重新获取工具列表（TODO：增量更新）
-        console.log('[Agent] MCP 工具列表已更新');
+        agentDebug.log('MCP 工具列表已更新');
       });
 
     } catch (error) {
-      console.warn('[Agent] MCP 工具加载失败:', (error as Error).message);
+      agentDebug.warn('MCP 工具加载失败:', (error as Error).message);
       // MCP 加载失败不应该阻止 Agent 启动
     }
   }

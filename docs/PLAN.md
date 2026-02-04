@@ -105,7 +105,17 @@ clawdcode/
 │   │   ├── types.ts        # 命令类型
 │   │   ├── mcpCommand.ts   # /mcp 命令
 │   │   └── index.ts        # 命令注册
-│   ├── store/              # Zustand Store
+│   ├── store/              # Zustand Store（第 11 章）
+│   │   ├── types.ts        # Store 类型定义
+│   │   ├── vanilla.ts      # Vanilla Store 实例
+│   │   ├── selectors.ts    # React 选择器
+│   │   ├── slices/         # Store Slices
+│   │   │   ├── sessionSlice.ts
+│   │   │   ├── configSlice.ts
+│   │   │   ├── appSlice.ts
+│   │   │   ├── focusSlice.ts
+│   │   │   └── commandSlice.ts
+│   │   └── index.ts        # 模块导出
 │   └── main.tsx            # CLI 入口
 ├── package.json
 └── tsconfig.json
@@ -139,7 +149,7 @@ clawdcode/
 |------|------|------|
 | 09 | Ink 框架、Markdown 渲染、焦点管理 | ✅ 已完成 → [文档](09-ui-system.md) |
 | 10 | MCP 协议介绍、工具发现、服务器管理 | ✅ 已完成 → [文档](10-mcp-protocol.md) |
-| 11 | 双文件配置、Zustand Store、SSOT 架构 | ⏳ 待提供 |
+| 11 | 双文件配置、Zustand Store、SSOT 架构 | ✅ 已完成 → [文档](11-config-state-management.md) |
 | 12 | Hooks、Subagents、Skills、IDE 集成、多端架构 | ⏳ 待提供 |
 
 ---
@@ -196,5 +206,5 @@ clawdcode/
 - [x] 第 08 章：上下文管理 ✅ (ContextManager + TokenCounter + 压缩服务 + JSONL 持久化)
 - [x] 第 09 章：UI 系统 ✅ (主题系统 + 焦点管理 + Markdown 渲染 + 代码高亮 + ClawdInterface)
 - [x] 第 10 章：MCP 协议 ✅ (McpClient + McpRegistry + createMcpTool + HealthMonitor + /mcp 命令)
-- [ ] 第 11 章：配置管理
+- [x] 第 11 章：配置系统与状态管理 ✅ (Zustand Store + 5 Slices + 选择器 + UI 集成 + ClawdInterface + ContextManager 集成)
 - [ ] 第 12 章：进阶功能

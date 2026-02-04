@@ -13,8 +13,10 @@ dist/
 .env
 .env.local
 
-# Config with secrets (keep config template, ignore actual config)
+# Config with secrets (keep templates, ignore actual configs)
 .clawdcode/config.json
+.clawdcode/settings.json
+.clawdcode/settings.local.json
 
 # IDE
 .idea/

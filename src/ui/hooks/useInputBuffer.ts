@@ -49,13 +49,18 @@ export const useInputBuffer = (
   }, [value, cursorPosition]);
 
   const setValue = useCallback((newValue: string) => {
+    // 立即更新 ref，避免 setCursorPosition 使用旧的长度限制
+    bufferRef.current.value = newValue;
     setValueState(newValue);
     // 确保光标不超出范围
     setCursorPositionState(prev => Math.min(prev, newValue.length));
   }, []);
 
   const setCursorPosition = useCallback((pos: number) => {
-    setCursorPositionState(Math.max(0, Math.min(pos, bufferRef.current.value.length)));
+    const newPos = Math.max(0, Math.min(pos, bufferRef.current.value.length));
+    // 立即更新 ref，保持同步
+    bufferRef.current.cursorPosition = newPos;
+    setCursorPositionState(newPos);
   }, []);
 
   const insertAt = useCallback((text: string) => {

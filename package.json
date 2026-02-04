@@ -17,6 +17,7 @@
     "test:pipeline": "bun run src/tools/execution/test.ts",
     "test:context": "bun run src/context/test.ts",
     "test:mcp": "bun run src/mcp/test.ts",
+    "test:store": "bun run src/store/test.ts",
     "prepublishOnly": "bun run build"
   },
   "keywords": [
@@ -66,7 +67,8 @@
     "string-width": "^8.1.1",
     "yargs": "^17.7.2",
     "zod": "^3.24.2",
-    "zod-to-json-schema": "^3.25.1"
+    "zod-to-json-schema": "^3.25.1",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@types/minimatch": "^6.0.0",

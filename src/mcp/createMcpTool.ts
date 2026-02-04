@@ -11,6 +11,7 @@ import type {
 } from './types.js';
 import { createTool } from '../tools/createTool.js';
 import { ToolKind, ToolErrorType } from '../tools/types.js';
+import { mcpDebug } from '../utils/debug.js';
 
 /**
  * 将 JSON Schema 转换为 Zod Schema
@@ -141,8 +142,8 @@ export function createMcpTool(
   try {
     zodSchema = convertJsonSchemaToZod(toolDef.inputSchema);
   } catch (error) {
-    console.warn(
-      `[createMcpTool] Schema 转换失败，使用降级 schema: ${toolDef.name}`,
+    mcpDebug.warn(
+      `Schema 转换失败，使用降级 schema: ${toolDef.name}`,
       (error as Error).message
     );
     zodSchema = z.any();  // 降级方案

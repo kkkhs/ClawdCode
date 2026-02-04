@@ -1,36 +1,14 @@
 {
   "default": {
-    "apiKey": "your-api-key-here",
+    "apiKey": "${OPENAI_API_KEY}",
     "baseURL": "https://api.openai.com/v1",
-    "model": "gpt-4"
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "maxContextTokens": 200000
   },
   "ui": {
     "theme": "dark"
   },
-  "permissions": {
-    "allow": [
-      "Read(**/*)",
-      "Glob(**/*)",
-      "Grep(**/*)",
-      "Bash(npm:*)",
-      "Bash(git:*)",
-      "Bash(bun:*)"
-    ],
-    "deny": [
-      "Bash(rm -rf:*)",
-      "Bash(sudo:*)",
-      "Write(/etc/*)",
-      "Write(/usr/*)"
-    ],
-    "ask": []
-  },
-  "defaultPermissionMode": "default",
-  "mcpEnabled": true,
-  "mcpServers": {
-    "filesystem": {
-      "type": "stdio",
-      "command": "mcp-server-filesystem",
-      "args": ["./"]
-    }
-  }
+  "mcpEnabled": false,
+  "mcpServers": {}
 }

@@ -70,7 +70,7 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
   if (tokenUsage) {
     items.push({
       label: '📊',
-      value: `${formatTokens(tokenUsage.input)}/${formatTokens(tokenUsage.output)}`,
+      value: `${formatTokens(tokenUsage.input)}/${formatTokens(tokenUsage.output)} tokens`,
       color: theme.colors.info,
     });
   }
@@ -80,9 +80,8 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
   }
 
   if (sessionId) {
-    // 只显示会话 ID 的最后 8 位
-    const shortId = sessionId.length > 8 ? sessionId.slice(-8) : sessionId;
-    items.push({ label: '📝', value: shortId, color: theme.colors.text.muted });
+    // 显示完整会话 ID
+    items.push({ label: '📝', value: sessionId, color: theme.colors.text.muted });
   }
 
   if (items.length === 0) {

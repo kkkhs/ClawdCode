@@ -1,12 +1,20 @@
 /**
- * ConfigManager - 配置管理器
+ * ConfigManager - 配置管理器（双文件配置架构）
+ * 
+ * 文件结构：
+ * - config.json: 基础配置（API、模型、UI、MCP）
+ * - settings.json: 行为配置（权限、Hooks、环境变量）
+ * - settings.local.json: 本地行为配置（不提交到 Git）
  * 
  * 配置加载优先级（从低到高）：
  * 1. 默认配置
- * 2. 用户配置 (~/.clawdcode/config.json)
- * 3. 项目配置 (./.clawdcode/config.json)
- * 4. 环境变量
- * 5. CLI 参数
+ * 2. 用户 config.json (~/.clawdcode/config.json)
+ * 3. 用户 settings.json (~/.clawdcode/settings.json)
+ * 4. 项目 config.json (./.clawdcode/config.json)
+ * 5. 项目 settings.json (./.clawdcode/settings.json)
+ * 6. 本地 settings.local.json (./.clawdcode/settings.local.json)
+ * 7. 环境变量
+ * 8. CLI 参数
  */
 
 import * as fs from 'node:fs';
@@ -42,27 +50,35 @@ export class ConfigManager {
 
   /**
    * 初始化配置（加载所有配置源）
+   * @returns 加载后的配置
    */
-  async initialize(projectPath?: string): Promise<void> {
+  async initialize(projectPath?: string): Promise<Config> {
     // 1. 从默认配置开始
     this.config = { ...DEFAULT_CONFIG };
 
-    // 2. 加载用户配置
-    const userConfigPath = this.getUserConfigPath();
-    await this.loadConfigFile(userConfigPath);
+    const userConfigDir = this.getUserConfigDir();
+    const projectDir = projectPath || process.cwd();
+    const projectConfigDir = path.join(projectDir, '.clawdcode');
 
-    // 3. 加载项目配置
-    if (projectPath) {
-      const projectConfigPath = path.join(projectPath, '.clawdcode', 'config.json');
-      await this.loadConfigFile(projectConfigPath);
-    } else {
-      // 尝试从当前目录加载
-      const cwdConfigPath = path.join(process.cwd(), '.clawdcode', 'config.json');
-      await this.loadConfigFile(cwdConfigPath);
-    }
+    // 2. 加载用户 config.json
+    await this.loadConfigFile(path.join(userConfigDir, 'config.json'));
 
-    // 4. 应用环境变量
+    // 3. 加载用户 settings.json
+    await this.loadConfigFile(path.join(userConfigDir, 'settings.json'));
+
+    // 4. 加载项目 config.json
+    await this.loadConfigFile(path.join(projectConfigDir, 'config.json'));
+
+    // 5. 加载项目 settings.json
+    await this.loadConfigFile(path.join(projectConfigDir, 'settings.json'));
+
+    // 6. 加载本地 settings.local.json（不提交到 Git）
+    await this.loadConfigFile(path.join(projectConfigDir, 'settings.local.json'));
+
+    // 7. 应用环境变量
     this.applyEnvironmentVariables();
+
+    return this.config;
   }
 
   /**

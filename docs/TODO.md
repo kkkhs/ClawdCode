@@ -6,9 +6,9 @@
 
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
-| `initializeStoreState` | 初始化应用状态到 Store | Zustand Store | 第 11 章 |
-| `mergeRuntimeConfig` | 合并 CLI 参数到运行时配置 | RuntimeConfig 类型 | 第 11 章 |
-| `appActions().setInitializationStatus` | 设置初始化状态 | Zustand actions | 第 11 章 |
+| ~~`initializeStoreState`~~ | ~~初始化应用状态到 Store~~ | ~~Zustand Store~~ | ✅ 第 11 章 |
+| ~~`mergeRuntimeConfig`~~ | ~~合并 CLI 参数到运行时配置~~ | ~~RuntimeConfig 类型~~ | ✅ 第 11 章 |
+| ~~`appActions().setInitializationStatus`~~ | ~~设置初始化状态~~ | ~~Zustand actions~~ | ✅ 第 11 章 |
 | ~~子命令 `mcp`~~ | ~~MCP 服务器管理~~ | ~~MCP 模块~~ | ✅ 第 10 章 |
 | 子命令 `doctor` | 诊断命令 | 诊断模块 | 第 12 章 |
 | 子命令 `update` | 更新命令 | - | 第 12 章 |
@@ -58,15 +58,15 @@
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
 | HookManager 完整实现 | Hooks 管理器完整版 | - | 第 12 章 |
-| 交互式确认 UI | 集成 ConfirmationPrompt 到主 UI | - | 第 11 章 |
+| 交互式确认 UI | 集成 ConfirmationPrompt 到主 UI | Store 集成 | 第 12 章 |
 
 ## 第九章遗留
 
-| 功能 | 说明 | 依赖 | 计划章节 |
-|------|------|------|----------|
-| App.tsx 切换到 ClawdInterface | 使用完整主界面替换 MainInterface | Zustand Store | 第 11 章 |
-| 集成 MessageArea/InputArea | 使用新组件替换 ink-text-input | ClawdInterface | 第 11 章 |
-| 集成 LoadingIndicator/ChatStatusBar | 使用新组件 | ClawdInterface | 第 11 章 |
+| 功能 | 说明 | 依赖 | 状态 |
+|------|------|------|------|
+| App.tsx 切换到 ClawdInterface | 使用完整主界面替换 MainInterface | Zustand Store | ✅ 第 11 章 |
+| 集成 MessageArea/InputArea | 使用新组件替换 ink-text-input | ClawdInterface | ✅ 第 11 章 |
+| 集成 LoadingIndicator/ChatStatusBar | 使用新组件 | ClawdInterface | ✅ 第 11 章 |
 
 ## 第八章遗留
 
@@ -74,17 +74,27 @@
 |------|------|------|----------|
 | `/compact` 命令 | 用户手动触发压缩 | slash-commands 系统 | 第 9 章 |
 | ContextFilter | 上下文过滤器 | - | 可选优化 |
-| Agent 集成 ContextManager | Agent 使用上下文管理（含会话持久化保存） | UI/Store | 第 11 章 |
+| ~~Agent 集成 ContextManager~~ | ~~Agent 使用上下文管理（含会话持久化保存）~~ | ~~UI/Store~~ | ✅ 第 11 章 |
 
 ## 第十章遗留
 
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
-| `loadMcpConfigFromCli` | 从 CLI 参数 `--mcp-config` 加载临时 MCP 配置 | Zustand Store | 第 11 章 |
+| `loadMcpConfigFromCli` | 从 CLI 参数 `--mcp-config` 加载临时 MCP 配置 | Store 集成 | 第 12 章 |
 | `OAuthProvider` | OAuth 2.0 认证流程（需要浏览器交互） | - | 可选优化 |
 | `src/mcp/auth/` 目录 | OAuth 认证相关文件 | OAuthProvider | 可选优化 |
-| `--mcp-config` CLI 参数 | CLI 传递临时 MCP 配置 | loadMcpConfigFromCli | 第 11 章 |
+| `--mcp-config` CLI 参数 | CLI 传递临时 MCP 配置 | loadMcpConfigFromCli | 第 12 章 |
 | Slash 命令集成到 UI | 在 UI 中处理 `/mcp` 等 slash 命令 | UI 系统 | 第 12 章 |
+
+## 第十一章遗留
+
+| 功能 | 说明 | 依赖 | 计划章节 |
+|------|------|------|----------|
+| ConfigService 完整实现 | 字段路由表、防抖、Per-file Mutex | write-file-atomic | 可选优化 |
+| 双文件配置加载 | settings.json + settings.local.json | ConfigManager 重构 | ✅ 第 11 章 |
+| 环境变量插值 | 配置文件中支持 `${VAR}` 语法 | ConfigManager | 可选优化 |
+| Store 与 UI 完整集成 | App.tsx 使用 Store 管理状态 | ClawdInterface | ✅ 第 11 章 |
+| configActions 持久化 | setTheme 等方法同步持久化到磁盘 | ConfigService | 可选优化 |
 
 ---
 
@@ -132,3 +142,26 @@
 | /mcp Slash 命令 | 第 10 章 | 2026-02-03 |
 | ConfigManager MCP 配置支持 | 第 10 章 | 2026-02-03 |
 | Agent 集成 MCP 工具 | 第 10 章 | 2026-02-03 |
+| Zustand Vanilla Store | 第 11 章 | 2026-02-04 |
+| sessionSlice 会话状态 | 第 11 章 | 2026-02-04 |
+| configSlice 配置状态 | 第 11 章 | 2026-02-04 |
+| appSlice 应用状态 | 第 11 章 | 2026-02-04 |
+| focusSlice 焦点状态 | 第 11 章 | 2026-02-04 |
+| commandSlice 命令队列 | 第 11 章 | 2026-02-04 |
+| React 选择器 (selectors.ts) | 第 11 章 | 2026-02-04 |
+| ensureStoreInitialized | 第 11 章 | 2026-02-04 |
+| RuntimeConfig 类型 | 第 11 章 | 2026-02-04 |
+| FIELD_ROUTING_TABLE 字段路由表 | 第 11 章 | 2026-02-04 |
+| DEFAULT_PERMISSIONS 默认权限 | 第 11 章 | 2026-02-04 |
+| mergeRuntimeConfig CLI 参数合并 | 第 11 章 | 2026-02-04 |
+| initializeStoreState Store 初始化 | 第 11 章 | 2026-02-04 |
+| App.tsx 切换到 ClawdInterface | 第 11 章 | 2026-02-04 |
+| Store 与 UI 完整集成 | 第 11 章 | 2026-02-04 |
+| ContextManager 集成到 ClawdInterface | 第 11 章 | 2026-02-04 |
+| 会话持久化（JSONL 自动保存） | 第 11 章 | 2026-02-04 |
+| Token 计数 + 自动压缩检查 | 第 11 章 | 2026-02-04 |
+| sessionActions.setSessionId | 第 11 章 | 2026-02-04 |
+| 完整 Session ID 显示 | 第 11 章 | 2026-02-04 |
+| 退出时会话恢复提示 | 第 11 章 | 2026-02-04 |
+| useCtrlCHandler onBeforeExit 回调 | 第 11 章 | 2026-02-04 |
+| ExitMessage 退出提示组件 | 第 11 章 | 2026-02-04 |

@@ -6,30 +6,29 @@
  * 启动流程：
  * 1. AppWrapper 等待版本检查完成
  * 2. 如果有新版本 → 显示 UpdatePrompt
- * 3. 用户跳过或无更新 → 初始化应用 → 显示主界面
+ * 3. 用户跳过或无更新 → 初始化 Store → 显示主界面
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text } from 'ink';
-import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
-import { Agent } from '../agent/Agent.js';
-import type { Message, ChatContext } from '../agent/types.js';
 import { ErrorBoundary } from './components/common/ErrorBoundary.js';
 import { UpdatePrompt } from './components/dialog/UpdatePrompt.js';
-import { MessageRenderer } from './components/markdown/MessageRenderer.js';
-import { useTerminalWidth } from './hooks/useTerminalWidth.js';
+import { ClawdInterface } from './components/ClawdInterface.js';
 import { themeManager } from './themes/ThemeManager.js';
 import type { PermissionMode } from '../cli/types.js';
 import type { VersionCheckResult } from '../services/VersionChecker.js';
+import type { RuntimeConfig, ClawdConfig } from '../config/types.js';
+import { DEFAULT_CONFIG } from '../config/types.js';
+import {
+  ensureStoreInitialized,
+  appActions,
+  configActions,
+  getConfig,
+  useInitializationStatus,
+} from '../store/index.js';
 
 // ========== 类型定义 ==========
-
-/** UI 展示用的消息类型 */
-interface UIMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
 
 export interface AppProps {
   apiKey: string;
@@ -42,232 +41,61 @@ export interface AppProps {
   resumeSessionId?: string;
 }
 
-// ========== 主界面组件 ==========
+// ========== 工具函数 ==========
 
-interface MainInterfaceProps {
-  apiKey: string;
-  baseURL?: string;
-  model?: string;
-  initialMessage?: string;
-  debug?: boolean;
-  resumeSessionId?: string;
+/**
+ * 合并 CLI 参数到基础配置，生成 RuntimeConfig
+ * 
+ * CLI 参数优先级最高，会覆盖配置文件中的值
+ */
+function mergeRuntimeConfig(baseConfig: ClawdConfig, props: AppProps): RuntimeConfig {
+  const runtimeConfig: RuntimeConfig = {
+    ...baseConfig,
+  };
+
+  // 合并 CLI 参数
+  if (props.initialMessage) {
+    runtimeConfig.initialMessage = props.initialMessage;
+  }
+
+  if (props.resumeSessionId) {
+    runtimeConfig.resumeSessionId = props.resumeSessionId;
+  }
+
+  if (props.permissionMode) {
+    runtimeConfig.defaultPermissionMode = props.permissionMode;
+  }
+
+  // 如果 CLI 传入了 model，更新 currentModelId
+  if (props.model) {
+    runtimeConfig.currentModelId = props.model;
+  }
+
+  return runtimeConfig;
 }
 
-const MainInterface: React.FC<MainInterfaceProps> = ({ 
-  apiKey, 
-  baseURL, 
-  model,
-  initialMessage,
-  debug,
-  resumeSessionId,
-}) => {
-  const [input, setInput] = useState('');
-  const [uiMessages, setUIMessages] = useState<UIMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [initError, setInitError] = useState<string | null>(null);
-  const [sessionStatus, setSessionStatus] = useState<string | null>(null);
+/**
+ * 初始化 Store 状态
+ * 
+ * 1. 设置配置到 Store
+ * 2. 检查是否需要设置向导
+ * 3. 设置初始化状态
+ */
+function initializeStoreState(config: RuntimeConfig): void {
+  // 设置配置
+  configActions().setConfig(config);
+
+  // 检查是否需要设置向导
+  // 支持两种配置方式：default（单模型）或 models（多模型）
+  const hasDefaultConfig = config.default?.apiKey;
+  const hasModelsConfig = config.models && config.models.length > 0;
   
-  // 获取终端宽度和主题
-  const terminalWidth = useTerminalWidth();
-  const theme = themeManager.getTheme();
-  
-  // Agent 实例和上下文
-  const agentRef = useRef<Agent | null>(null);
-  const contextRef = useRef<ChatContext>({
-    sessionId: resumeSessionId || `session-${Date.now()}`,
-    messages: [],
-  });
-  const initialMessageSent = useRef(false);
-
-  // 初始化 Agent（使用无状态设计）
-  useEffect(() => {
-    const initAgent = async () => {
-      try {
-        if (debug) {
-          console.log('[DEBUG] Initializing Agent...');
-        }
-        
-        agentRef.current = await Agent.create({
-          apiKey,
-          baseURL,
-          model,
-        });
-        
-        // 如果有 resumeSessionId，尝试加载会话历史
-        if (resumeSessionId) {
-          try {
-            const { PersistentStore } = await import('../context/storage/PersistentStore.js');
-            const store = new PersistentStore(process.cwd());
-            const conversation = await store.loadConversation(resumeSessionId);
-            
-            if (conversation && conversation.messages.length > 0) {
-              // 恢复消息历史
-              contextRef.current.messages = conversation.messages.map(m => ({
-                role: m.role as Message['role'],
-                content: m.content,
-              }));
-              
-              // 更新 UI 消息
-              const uiMsgs: UIMessage[] = conversation.messages
-                .filter(m => m.role === 'user' || m.role === 'assistant')
-                .map(m => ({
-                  role: m.role as 'user' | 'assistant',
-                  content: m.content,
-                }));
-              setUIMessages(uiMsgs);
-              setSessionStatus(`Resumed session: ${resumeSessionId} (${conversation.messages.length} messages)`);
-              
-              if (debug) {
-                console.log('[DEBUG] Loaded session with', conversation.messages.length, 'messages');
-              }
-            }
-          } catch (error) {
-            if (debug) {
-              console.log('[DEBUG] Failed to load session:', error);
-            }
-            setSessionStatus('Could not load previous session, starting fresh');
-          }
-        }
-        
-        setIsInitializing(false);
-        
-        if (debug) {
-          console.log('[DEBUG] Agent initialized successfully');
-        }
-      } catch (error) {
-        setInitError(error instanceof Error ? error.message : '初始化失败');
-        setIsInitializing(false);
-      }
-    };
-    
-    initAgent();
-  }, [apiKey, baseURL, model, debug, resumeSessionId]);
-
-  const handleSubmit = useCallback(async (value: string) => {
-    if (!value.trim() || !agentRef.current) return;
-
-    // 添加用户消息到 UI
-    const userUIMessage: UIMessage = { role: 'user', content: value };
-    setUIMessages(prev => [...prev, userUIMessage]);
-    setInput('');
-    setIsLoading(true);
-
-    // 添加用户消息到上下文
-    const userMessage: Message = { role: 'user', content: value };
-    contextRef.current.messages.push(userMessage);
-
-    if (debug) {
-      console.log('[DEBUG] Sending message:', value);
-      console.log('[DEBUG] Context messages count:', contextRef.current.messages.length);
-    }
-
-    try {
-      // 使用无状态 Agent，传入上下文
-      const result = await agentRef.current.chat(value, contextRef.current);
-      
-      // 添加助手消息到 UI
-      const assistantUIMessage: UIMessage = { role: 'assistant', content: result };
-      setUIMessages(prev => [...prev, assistantUIMessage]);
-      
-      // 添加助手消息到上下文（保持历史连续性）
-      const assistantMessage: Message = { role: 'assistant', content: result };
-      contextRef.current.messages.push(assistantMessage);
-      
-    } catch (error) {
-      const errorContent = `Error: ${(error as Error).message}`;
-      const errorUIMessage: UIMessage = { role: 'assistant', content: errorContent };
-      setUIMessages(prev => [...prev, errorUIMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [debug]);
-
-  // 处理初始消息
-  useEffect(() => {
-    if (initialMessage && !initialMessageSent.current && !isInitializing && agentRef.current) {
-      initialMessageSent.current = true;
-      handleSubmit(initialMessage);
-    }
-  }, [initialMessage, handleSubmit, isInitializing]);
-
-  // 初始化中
-  if (isInitializing) {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Box>
-          <Text color="yellow">
-            <Spinner type="dots" />
-          </Text>
-          <Text color="yellow"> Initializing Agent...</Text>
-        </Box>
-      </Box>
-    );
+  if (!hasDefaultConfig && !hasModelsConfig) {
+    appActions().setInitializationStatus('needsSetup');
+  } else {
+    appActions().setInitializationStatus('ready');
   }
-
-  // 初始化失败
-  if (initError) {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text color="red">❌ Agent initialization failed:</Text>
-        <Text color="red">{initError}</Text>
-      </Box>
-    );
-  }
-
-  return (
-    <Box flexDirection="column" padding={1}>
-      {/* 标题 */}
-      <Box marginBottom={1}>
-        <Text bold color={theme.colors.primary}>🤖 ClawdCode - CLI Coding Agent</Text>
-        {debug && <Text color={theme.colors.text.muted}> [DEBUG]</Text>}
-      </Box>
-
-      {/* 会话状态 */}
-      {sessionStatus && (
-        <Box marginBottom={1}>
-          <Text color={theme.colors.text.muted}>{sessionStatus}</Text>
-        </Box>
-      )}
-
-      {/* 消息历史 - 使用 MessageRenderer 渲染 Markdown */}
-      <Box flexDirection="column" marginBottom={1}>
-        {uiMessages.map((msg, index) => (
-          <MessageRenderer
-            key={index}
-            content={msg.content}
-            role={msg.role}
-            terminalWidth={terminalWidth - 2}
-            showPrefix={true}
-          />
-        ))}
-
-        {/* 加载中 */}
-        {isLoading && (
-          <Box>
-            <Text color={theme.colors.warning}>
-              <Spinner type="dots" />
-            </Text>
-            <Text color={theme.colors.warning}> Thinking...</Text>
-          </Box>
-        )}
-      </Box>
-
-      {/* 输入框 */}
-      {!isLoading && (
-        <Box>
-          <Text color={theme.colors.success}>{'> '}</Text>
-          <TextInput
-            value={input}
-            onChange={setInput}
-            onSubmit={handleSubmit}
-            placeholder="Ask me anything... (Ctrl+C to exit)"
-          />
-        </Box>
-      )}
-    </Box>
-  );
-};
+}
 
 // ========== AppWrapper 组件 ==========
 
@@ -275,24 +103,61 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
  * AppWrapper - 处理版本检查和初始化流程
  * 
  * 流程：
- * 1. 等待版本检查 Promise（已在 main.tsx 启动，与 yargs/middleware 并行）
- * 2. 如果有新版本 → 显示 UpdatePrompt
- * 3. 用户选择后 → 初始化应用 → 显示主界面
+ * 1. 初始化 Zustand Store（加载配置文件）
+ * 2. 合并 CLI 参数生成 RuntimeConfig
+ * 3. 初始化 Store 状态
+ * 4. 等待版本检查
+ * 5. 显示主界面
  */
 const AppWrapper: React.FC<AppProps> = (props) => {
   const { versionCheckPromise, permissionMode, ...mainProps } = props;
   
-  const [isReady, setIsReady] = useState(false);
+  // 使用 Store 状态
+  const initializationStatus = useInitializationStatus();
+  
   const [versionInfo, setVersionInfo] = useState<VersionCheckResult | null>(null);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
 
-  // 初始化应用
-  const initializeApp = useCallback(() => {
+  // 初始化应用（包括 Store）
+  const initializeApp = useCallback(async () => {
     if (props.debug) {
-      console.log('[DEBUG] Initializing application...');
+      console.log('[DEBUG] Initializing application and Store...');
     }
-    setIsReady(true);
-  }, [props.debug]);
+    
+    try {
+      appActions().setInitializationStatus('loading');
+      
+      // 1. 初始化 Store（加载配置文件）
+      await ensureStoreInitialized();
+      
+      // 2. 从 Store 读取基础配置
+      const baseConfig = getConfig() ?? DEFAULT_CONFIG;
+      
+      // 3. 合并 CLI 参数生成 RuntimeConfig
+      const mergedConfig = mergeRuntimeConfig(baseConfig, props);
+      
+      // 4. 初始化 Store 状态
+      initializeStoreState(mergedConfig);
+      
+      // 5. 加载主题
+      const savedTheme = mergedConfig.theme;
+      if (savedTheme && themeManager.hasTheme(savedTheme)) {
+        themeManager.setTheme(savedTheme);
+      }
+      
+      if (props.debug) {
+        console.log('[DEBUG] Store initialized successfully');
+        console.log('[DEBUG] Config:', mergedConfig);
+      }
+    } catch (error) {
+      appActions().setInitializationError(
+        error instanceof Error ? error.message : 'Unknown initialization error'
+      );
+      if (props.debug) {
+        console.log('[DEBUG] Store initialization failed:', error);
+      }
+    }
+  }, [props]);
 
   // 启动流程
   useEffect(() => {
@@ -315,8 +180,8 @@ const AppWrapper: React.FC<AppProps> = (props) => {
         }
       }
 
-      // 2. 无需更新，直接初始化
-      initializeApp();
+      // 2. 无需更新，初始化应用
+      await initializeApp();
     };
 
     initialize();
@@ -327,16 +192,16 @@ const AppWrapper: React.FC<AppProps> = (props) => {
     return (
       <UpdatePrompt
         versionInfo={versionInfo}
-        onComplete={() => {
+        onComplete={async () => {
           setShowUpdatePrompt(false);
-          initializeApp();
+          await initializeApp();
         }}
       />
     );
   }
 
   // 等待初始化完成
-  if (!isReady) {
+  if (initializationStatus === 'pending' || initializationStatus === 'loading') {
     return (
       <Box padding={1}>
         <Text color="yellow">
@@ -347,8 +212,18 @@ const AppWrapper: React.FC<AppProps> = (props) => {
     );
   }
 
-  // 显示主界面
-  return <MainInterface {...mainProps} />;
+  // 初始化错误
+  if (initializationStatus === 'error') {
+    return (
+      <Box padding={1} flexDirection="column">
+        <Text color="red">❌ Initialization failed</Text>
+        <Text color="gray">Please check your configuration and try again.</Text>
+      </Box>
+    );
+  }
+
+  // 显示主界面（使用 ClawdInterface）
+  return <ClawdInterface {...mainProps} />;
 };
 
 // ========== 导出 ==========

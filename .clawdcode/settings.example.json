@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**/*)",
+      "Glob(**/*)",
+      "Grep(**/*)",
+      "Bash(pwd)",
+      "Bash(ls *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(npm *)",
+      "Bash(bun *)"
+    ],
+    "ask": [
+      "Bash(curl *)",
+      "Bash(wget *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(rm -rf /)",
+      "Bash(sudo *)",
+      "Write(/etc/*)",
+      "Write(/usr/*)"
+    ]
+  },
+  "defaultPermissionMode": "default",
+  "maxTurns": 100,
+  "hooks": {
+    "preToolCall": [],
+    "postToolCall": []
+  },
+  "env": {}
+}

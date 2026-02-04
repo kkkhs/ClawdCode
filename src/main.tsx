@@ -28,6 +28,7 @@ import { cliConfig, globalOptions, middlewareChain } from './cli/index.js';
 import { checkVersionOnStartup } from './services/index.js';
 import { getLatestSessionFile } from './context/index.js';
 import { themeManager } from './ui/themes/ThemeManager.js';
+import { setGlobalDebug } from './utils/debug.js';
 import type { CliArguments } from './cli/types.js';
 import type { VersionCheckResult } from './services/VersionChecker.js';
 import * as path from 'node:path';
@@ -51,6 +52,7 @@ function parseDebugEarly(): void {
 
   if (debugIndex !== -1 || shortDebugIndex !== -1) {
     isDebugMode = true
+    setGlobalDebug(true)  // 设置全局 debug 状态，供其他模块使用
     console.log('[DEBUG] Debug mode enabled via early parsing')
   }
 }
@@ -223,7 +225,7 @@ async function main(): Promise<void> {
             resumeSessionId={resumeSessionId}
           />,
           {
-            exitOnCtrlC: true,
+            exitOnCtrlC: false, // 由 useCtrlCHandler 处理退出
           },
         )
       },
