@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/kkkhs/ClawdCode/compare/v1.3.0...v1.4.0) (2026-02-04)
+
+
+### Features
+
+* **mcp:** implement MCP protocol integration ([d9504e6](https://github.com/kkkhs/ClawdCode/commit/d9504e69ed2c7d2c95006c5d5f100c6ea0fb5cd9))
+* **store:** implement Chapter 11 - Configuration & State Management ([9fd25f4](https://github.com/kkkhs/ClawdCode/commit/9fd25f42879e0b90cf850659898ec3c88437e00c))
+
 ## [1.3.0](https://github.com/kkkhs/ClawdCode/compare/v1.2.0...v1.3.0) (2026-02-04)
 
 
