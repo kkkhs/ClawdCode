@@ -3,6 +3,42 @@
  */
 
 import type { Options } from 'yargs';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+/**
+ * 同步读取 package.json 版本
+ * 尝试多个可能的路径以适应不同环境（开发/打包/全局安装）
+ * 
+ * 注意：不使用 process.cwd()，因为用户运行 clawdcode 时
+ * 工作目录是他们的项目目录，不是 clawdcode 安装目录
+ */
+function readVersionSync(): string {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  
+  const possiblePaths = [
+    path.resolve(__dirname, '../package.json'),     // 打包后/全局安装: dist/ -> root
+    path.resolve(__dirname, '../../package.json'),  // 开发环境: src/cli/ -> root
+  ];
+
+  for (const pkgPath of possiblePaths) {
+    try {
+      const content = fs.readFileSync(pkgPath, 'utf-8');
+      const pkg = JSON.parse(content) as { name?: string; version?: string };
+      if (pkg.name === 'clawdcode' && pkg.version) {
+        return pkg.version;
+      }
+    } catch {
+      // 继续尝试下一个路径
+    }
+  }
+
+  return '0.1.0';
+}
+
+const version = readVersionSync();
 
 /**
  * CLI 基础配置
@@ -10,7 +46,7 @@ import type { Options } from 'yargs';
 export const cliConfig = {
   scriptName: 'clawdcode',
   usage: '$0 [message] [options]',
-  version: '0.1.0',
+  version,
 };
 
 /**

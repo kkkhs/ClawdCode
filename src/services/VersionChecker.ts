@@ -7,7 +7,8 @@
  * - 跳过版本功能（Skip until next version）
  */
 
-import fs from 'fs/promises';
+import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
@@ -24,20 +25,41 @@ interface PackageJson {
   homepage?: string;
 }
 
-// 获取 package.json 路径
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const packageJsonPath = path.resolve(__dirname, '../../package.json');
+/**
+ * 同步读取 package.json
+ * 尝试多个可能的路径以适应不同环境（开发/打包/全局安装）
+ * 
+ * 注意：不使用 process.cwd()，因为用户运行 clawdcode 时
+ * 工作目录是他们的项目目录，不是 clawdcode 安装目录
+ */
+function readPackageJsonSync(): PackageJson {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  
+  // 可能的 package.json 路径（基于 __dirname）
+  const possiblePaths = [
+    path.resolve(__dirname, '../package.json'),     // 打包后/全局安装: dist/ -> root
+    path.resolve(__dirname, '../../package.json'),  // 开发环境: src/services/ -> root
+  ];
 
-// 同步读取 package.json（仅在模块加载时执行一次）
-let packageJson: PackageJson;
-try {
-  const content = await fs.readFile(packageJsonPath, 'utf-8');
-  packageJson = JSON.parse(content) as PackageJson;
-} catch {
-  // 如果读取失败，使用默认值
-  packageJson = { name: 'clawdcode', version: '0.1.0' };
+  for (const pkgPath of possiblePaths) {
+    try {
+      const content = fs.readFileSync(pkgPath, 'utf-8');
+      const pkg = JSON.parse(content) as PackageJson;
+      // 验证是否是正确的 package（名字匹配）
+      if (pkg.name === 'clawdcode') {
+        return pkg;
+      }
+    } catch {
+      // 继续尝试下一个路径
+    }
+  }
+
+  // 如果都失败，使用默认值
+  return { name: 'clawdcode', version: '0.1.0' };
 }
+
+const packageJson = readPackageJsonSync();
 
 /**
  * 从 package.json 获取 release notes URL
@@ -92,7 +114,7 @@ async function getNpmRegistry(): Promise<string> {
 
   for (const npmrcPath of npmrcLocations) {
     try {
-      const content = await fs.readFile(npmrcPath, 'utf-8');
+      const content = await fsPromises.readFile(npmrcPath, 'utf-8');
       // 匹配 registry=https://xxx 或 registry = https://xxx
       const match = content.match(/^\s*registry\s*=\s*(.+?)\s*$/m);
       if (match && match[1]) {
@@ -141,7 +163,7 @@ interface VersionCache {
  */
 async function readCache(): Promise<VersionCache | null> {
   try {
-    const content = await fs.readFile(CACHE_FILE, 'utf-8');
+    const content = await fsPromises.readFile(CACHE_FILE, 'utf-8');
     const cache: VersionCache = JSON.parse(content);
     return cache;
   } catch {
@@ -154,8 +176,8 @@ async function readCache(): Promise<VersionCache | null> {
  */
 async function writeCache(cache: VersionCache): Promise<void> {
   try {
-    await fs.mkdir(CACHE_DIR, { recursive: true });
-    await fs.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2));
+    await fsPromises.mkdir(CACHE_DIR, { recursive: true });
+    await fsPromises.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2));
   } catch (error) {
     // 缓存写入失败不影响主流程
     console.error('[VersionChecker] Failed to write cache:', error);
@@ -329,9 +351,10 @@ export async function clearSkipVersion(): Promise<void> {
 
 /**
  * 获取升级命令
+ * 使用 --prefer-online 强制从网络获取最新版本，避免 npm 缓存问题
  */
 export function getUpgradeCommand(): string {
-  return `npm install -g ${PACKAGE_NAME}@latest`;
+  return `npm install -g ${PACKAGE_NAME}@latest --prefer-online`;
 }
 
 /**
@@ -352,7 +375,7 @@ export async function performUpgrade(): Promise<{ success: boolean; message: str
       if (code === 0) {
         resolve({
           success: true,
-          message: '✅ Upgrade successful! Please restart clawdcode.',
+          message: '✅ Upgrade successful! Restarting...',
         });
       } else {
         resolve({
@@ -369,6 +392,29 @@ export async function performUpgrade(): Promise<{ success: boolean; message: str
       });
     });
   });
+}
+
+/**
+ * 重启应用
+ * 启动新的 clawdcode 进程并退出当前进程
+ */
+export function restartApp(): void {
+  const { spawn } = require('child_process');
+  
+  // 启动新的 clawdcode 进程
+  // 使用 detached: true 让子进程独立运行
+  // 使用 stdio: 'inherit' 让新进程继承终端
+  const child = spawn(PACKAGE_NAME, process.argv.slice(2), {
+    stdio: 'inherit',
+    shell: true,
+    detached: true,
+  });
+
+  // 让子进程脱离父进程
+  child.unref();
+
+  // 退出当前进程
+  process.exit(0);
 }
 
 /**
