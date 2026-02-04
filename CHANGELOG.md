@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/kkkhs/ClawdCode/compare/v1.1.1...v1.2.0) (2026-02-04)
+
+
+### Features
+
+* add docs-site-page by vitepress ([8aaa11a](https://github.com/kkkhs/ClawdCode/commit/8aaa11abb1a0f47d84ddc2812fb40ea54fe1e247))
+* Chapter 8 - Context Management ([1ae7b6a](https://github.com/kkkhs/ClawdCode/commit/1ae7b6ab10aff0b84e9fe33b30e449f1fe4cdac2))
+
+
+### Bug Fixes
+
+* version check fix ([2d68306](https://github.com/kkkhs/ClawdCode/commit/2d6830632219409c974f337192a8d8cbfb1fa22d))
+
 ## [1.1.1](https://github.com/kkkhs/ClawdCode/compare/v1.1.0...v1.1.1) (2026-02-03)
 
 
