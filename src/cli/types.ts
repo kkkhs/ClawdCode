@@ -61,4 +61,5 @@ export interface AppProps {
   initialMessage?: string;
   debug?: boolean;
   permissionMode?: PermissionMode;
+  resumeSessionId?: string;
 }

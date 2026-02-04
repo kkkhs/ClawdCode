@@ -26,8 +26,10 @@ import { App } from './ui/App.js';
 import { configManager } from './config/index.js';
 import { cliConfig, globalOptions, middlewareChain } from './cli/index.js';
 import { checkVersionOnStartup } from './services/index.js';
+import { getLatestSessionFile } from './context/index.js';
 import type { CliArguments } from './cli/types.js';
 import type { VersionCheckResult } from './services/VersionChecker.js';
+import * as path from 'node:path';
 
 // ========== 全局状态 ==========
 let isDebugMode = false;
@@ -177,6 +179,28 @@ async function main(): Promise<void> {
           console.log('[DEBUG] Initial message:', initialMessage)
         }
 
+        // 处理 --continue 和 --resume 参数
+        let resumeSessionId: string | undefined;
+        
+        if (args.continue) {
+          // 获取最近的会话文件
+          const latestSession = await getLatestSessionFile(process.cwd());
+          if (latestSession) {
+            // 从文件路径提取 sessionId（去掉 .jsonl 扩展名）
+            resumeSessionId = path.basename(latestSession, '.jsonl');
+            if (isDebugMode) {
+              console.log('[DEBUG] Continuing session:', resumeSessionId);
+            }
+          } else {
+            console.log('No previous session found. Starting a new conversation.');
+          }
+        } else if (args.resume && typeof args.resume === 'string') {
+          resumeSessionId = args.resume;
+          if (isDebugMode) {
+            console.log('[DEBUG] Resuming session:', resumeSessionId);
+          }
+        }
+
         // 启动 Ink 应用
         render(
           <App
@@ -187,6 +211,7 @@ async function main(): Promise<void> {
             debug={args.debug}
             permissionMode={args.permissionMode}
             versionCheckPromise={versionCheckPromise}
+            resumeSessionId={resumeSessionId}
           />,
           {
             exitOnCtrlC: true,

@@ -14,6 +14,7 @@ import {
   setSkipUntilVersion,
   getUpgradeCommand,
   performUpgrade,
+  restartApp,
 } from '../../services/VersionChecker.js';
 
 interface UpdatePromptProps {
@@ -71,8 +72,8 @@ export const UpdatePrompt: React.FC<UpdatePromptProps> = ({
         const result = await performUpgrade();
         setUpdateResult(result.message);
         if (result.success) {
-          // 升级成功，退出程序
-          setTimeout(() => process.exit(0), 1500);
+          // 升级成功，自动重启应用
+          setTimeout(() => restartApp(), 1500);
         } else {
           // 升级失败，继续进入应用
           setTimeout(() => onComplete(), 2000);

@@ -36,6 +36,7 @@ export interface AppProps {
   debug?: boolean;
   permissionMode?: PermissionMode;
   versionCheckPromise?: Promise<VersionCheckResult | null>;
+  resumeSessionId?: string;
 }
 
 // ========== 主界面组件 ==========
@@ -46,6 +47,7 @@ interface MainInterfaceProps {
   model?: string;
   initialMessage?: string;
   debug?: boolean;
+  resumeSessionId?: string;
 }
 
 const MainInterface: React.FC<MainInterfaceProps> = ({ 
@@ -54,17 +56,19 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
   model,
   initialMessage,
   debug,
+  resumeSessionId,
 }) => {
   const [input, setInput] = useState('');
   const [uiMessages, setUIMessages] = useState<UIMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<string | null>(null);
   
   // Agent 实例和上下文
   const agentRef = useRef<Agent | null>(null);
   const contextRef = useRef<ChatContext>({
-    sessionId: `session-${Date.now()}`,
+    sessionId: resumeSessionId || `session-${Date.now()}`,
     messages: [],
   });
   const initialMessageSent = useRef(false);
@@ -83,6 +87,42 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
           model,
         });
         
+        // 如果有 resumeSessionId，尝试加载会话历史
+        if (resumeSessionId) {
+          try {
+            const { PersistentStore } = await import('../context/storage/PersistentStore.js');
+            const store = new PersistentStore(process.cwd());
+            const conversation = await store.loadConversation(resumeSessionId);
+            
+            if (conversation && conversation.messages.length > 0) {
+              // 恢复消息历史
+              contextRef.current.messages = conversation.messages.map(m => ({
+                role: m.role as Message['role'],
+                content: m.content,
+              }));
+              
+              // 更新 UI 消息
+              const uiMsgs: UIMessage[] = conversation.messages
+                .filter(m => m.role === 'user' || m.role === 'assistant')
+                .map(m => ({
+                  role: m.role as 'user' | 'assistant',
+                  content: m.content,
+                }));
+              setUIMessages(uiMsgs);
+              setSessionStatus(`Resumed session: ${resumeSessionId} (${conversation.messages.length} messages)`);
+              
+              if (debug) {
+                console.log('[DEBUG] Loaded session with', conversation.messages.length, 'messages');
+              }
+            }
+          } catch (error) {
+            if (debug) {
+              console.log('[DEBUG] Failed to load session:', error);
+            }
+            setSessionStatus('Could not load previous session, starting fresh');
+          }
+        }
+        
         setIsInitializing(false);
         
         if (debug) {
@@ -95,7 +135,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
     };
     
     initAgent();
-  }, [apiKey, baseURL, model, debug]);
+  }, [apiKey, baseURL, model, debug, resumeSessionId]);
 
   const handleSubmit = useCallback(async (value: string) => {
     if (!value.trim() || !agentRef.current) return;
@@ -176,6 +216,13 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
         {debug && <Text color="gray"> [DEBUG]</Text>}
       </Box>
 
+      {/* 会话状态 */}
+      {sessionStatus && (
+        <Box marginBottom={1}>
+          <Text color="gray">{sessionStatus}</Text>
+        </Box>
+      )}
+
       {/* 消息历史 */}
       <Box flexDirection="column" marginBottom={1}>
         {uiMessages.map((msg, index) => (
@@ -225,7 +272,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
  * 3. 用户选择后 → 初始化应用 → 显示主界面
  */
 const AppWrapper: React.FC<AppProps> = (props) => {
-  const { versionCheckPromise, ...mainProps } = props;
+  const { versionCheckPromise, permissionMode, ...mainProps } = props;
   
   const [isReady, setIsReady] = useState(false);
   const [versionInfo, setVersionInfo] = useState<VersionCheckResult | null>(null);

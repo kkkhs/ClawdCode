@@ -59,7 +59,11 @@ clawdcode/
 │   │   │   └── ErrorBoundary.tsx  # 错误边界（第 3 章）
 │   │   └── App.tsx         # UI 入口
 │   ├── config/             # 配置管理
-│   ├── context/            # 上下文管理（消息历史、压缩）
+│   ├── context/            # 上下文管理（第 8 章）
+│   │   ├── storage/        # 存储层 (Memory/Persistent/Cache)
+│   │   ├── ContextManager  # 上下文管理器
+│   │   ├── TokenCounter    # Token 计算
+│   │   └── CompactionService # 压缩服务
 │   ├── services/           # 服务层 (ChatService)
 │   ├── prompts/            # 提示词管理
 │   ├── mcp/                # MCP 协议（进阶）
@@ -89,7 +93,7 @@ clawdcode/
 | 05 | 系统提示词、Plan 模式提示词、工具提示词、压缩提示词 | ✅ 已完成 → [文档](05-system-prompt.md) |
 | 06 | 工具抽象、内置工具、工具注册机制 | ✅ 已完成 → [文档](06-tool-system.md) |
 | 07 | 执行管道、权限模型、确认机制 | ✅ 已完成 → [文档](07-execution-pipeline.md) |
-| 08 | 消息历史、Token 统计、自动压缩策略 | ⏳ 待提供 |
+| 08 | 消息历史、Token 统计、自动压缩策略 | ✅ 已完成 → [文档](08-context-management.md) |
 
 ### 第三部分：进阶篇
 
@@ -151,7 +155,7 @@ clawdcode/
 - [x] 第 05 章：System Prompt ✅ (四层架构 + Plan 模式)
 - [x] 第 06 章：工具系统 ✅ (createTool + Registry + 6 个内置工具)
 - [x] 第 07 章：执行管道 ✅ (七阶段管道 + 权限模型 + 确认机制)
-- [ ] 第 08 章：上下文管理
+- [x] 第 08 章：上下文管理 ✅ (ContextManager + TokenCounter + 压缩服务 + JSONL 持久化)
 - [ ] 第 09 章：UI 系统
 - [ ] 第 10 章：MCP 协议
 - [ ] 第 11 章：配置管理
