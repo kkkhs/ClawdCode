@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/kkkhs/ClawdCode/compare/v1.2.0...v1.3.0) (2026-02-04)
+
+
+### Features
+
+* Chapter 9 - UI System (React + Ink) ([d0d6f8d](https://github.com/kkkhs/ClawdCode/commit/d0d6f8d3e827ab261e862f9a663a773c0ec60fa4))
+
 ## [1.2.0](https://github.com/kkkhs/ClawdCode/compare/v1.1.1...v1.2.0) (2026-02-04)
 
 
