@@ -54,10 +54,39 @@ clawdcode/
 │   │   ├── builtin/        # 内置工具 (Read, Write, Edit, Bash, Grep, Glob)
 │   │   ├── registry/       # 工具注册表
 │   │   └── execution/      # 执行管道
-│   ├── ui/                 # UI 系统
-│   │   ├── components/     # React 组件
-│   │   │   └── ErrorBoundary.tsx  # 错误边界（第 3 章）
-│   │   └── App.tsx         # UI 入口
+│   ├── ui/                 # UI 系统（第 9 章）
+│   │   ├── App.tsx         # UI 入口（AppWrapper + MainInterface）
+│   │   ├── components/     # React 组件（按功能分组）
+│   │   │   ├── common/     # 通用组件
+│   │   │   │   ├── ErrorBoundary.tsx
+│   │   │   │   └── LoadingIndicator.tsx
+│   │   │   ├── input/      # 输入组件
+│   │   │   │   ├── CustomTextInput.tsx
+│   │   │   │   └── InputArea.tsx
+│   │   │   ├── markdown/   # Markdown 渲染
+│   │   │   │   ├── CodeHighlighter.tsx
+│   │   │   │   ├── MessageRenderer.tsx
+│   │   │   │   ├── parser.ts
+│   │   │   │   └── types.ts
+│   │   │   ├── dialog/     # 对话框组件
+│   │   │   │   ├── ConfirmationPrompt.tsx
+│   │   │   │   └── UpdatePrompt.tsx
+│   │   │   ├── layout/     # 布局组件
+│   │   │   │   ├── ChatStatusBar.tsx
+│   │   │   │   └── MessageArea.tsx
+│   │   │   └── ClawdInterface.tsx  # 主界面（顶层）
+│   │   ├── themes/         # 主题系统
+│   │   │   ├── ThemeManager.ts
+│   │   │   ├── defaultTheme.ts
+│   │   │   └── darkTheme.ts
+│   │   ├── hooks/          # 自定义 Hooks
+│   │   │   ├── useTerminalWidth.ts
+│   │   │   ├── useCommandHistory.ts
+│   │   │   ├── useInputBuffer.ts
+│   │   │   └── useConfirmation.ts
+│   │   └── focus/          # 焦点管理
+│   │       ├── FocusManager.ts
+│   │       └── useFocus.ts
 │   ├── config/             # 配置管理
 │   ├── context/            # 上下文管理（第 8 章）
 │   │   ├── storage/        # 存储层 (Memory/Persistent/Cache)
@@ -99,7 +128,7 @@ clawdcode/
 
 | 章节 | 内容 | 状态 |
 |------|------|------|
-| 09 | Ink 框架、Markdown 渲染、焦点管理 | ⏳ 待提供 |
+| 09 | Ink 框架、Markdown 渲染、焦点管理 | ✅ 已完成 → [文档](09-ui-system.md) |
 | 10 | MCP 协议介绍、工具发现、服务器管理 | ⏳ 待提供 |
 | 11 | 双文件配置、Zustand Store、SSOT 架构 | ⏳ 待提供 |
 | 12 | Hooks、Subagents、Skills、IDE 集成、多端架构 | ⏳ 待提供 |
@@ -156,7 +185,7 @@ clawdcode/
 - [x] 第 06 章：工具系统 ✅ (createTool + Registry + 6 个内置工具)
 - [x] 第 07 章：执行管道 ✅ (七阶段管道 + 权限模型 + 确认机制)
 - [x] 第 08 章：上下文管理 ✅ (ContextManager + TokenCounter + 压缩服务 + JSONL 持久化)
-- [ ] 第 09 章：UI 系统
+- [x] 第 09 章：UI 系统 ✅ (主题系统 + 焦点管理 + Markdown 渲染 + 代码高亮 + ClawdInterface)
 - [ ] 第 10 章：MCP 协议
 - [ ] 第 11 章：配置管理
 - [ ] 第 12 章：进阶功能

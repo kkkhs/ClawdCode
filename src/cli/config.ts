@@ -157,6 +157,16 @@ export const globalOptions = {
     group: 'Output Options:',
   },
 
+  // ========== UI Options ==========
+  theme: {
+    alias: 't',
+    type: 'string',
+    choices: ['default', 'dark', 'ocean', 'forest', 'sunset'] as const,
+    describe: 'Color theme for the UI',
+    default: 'default',
+    group: 'UI Options:',
+  },
+
   // ========== Config Options ==========
   init: {
     type: 'boolean',

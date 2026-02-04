@@ -27,6 +27,7 @@ import { configManager } from './config/index.js';
 import { cliConfig, globalOptions, middlewareChain } from './cli/index.js';
 import { checkVersionOnStartup } from './services/index.js';
 import { getLatestSessionFile } from './context/index.js';
+import { themeManager } from './ui/themes/ThemeManager.js';
 import type { CliArguments } from './cli/types.js';
 import type { VersionCheckResult } from './services/VersionChecker.js';
 import * as path from 'node:path';
@@ -198,6 +199,14 @@ async function main(): Promise<void> {
           resumeSessionId = args.resume;
           if (isDebugMode) {
             console.log('[DEBUG] Resuming session:', resumeSessionId);
+          }
+        }
+
+        // 设置主题
+        if (args.theme && themeManager.hasTheme(args.theme)) {
+          themeManager.setTheme(args.theme);
+          if (isDebugMode) {
+            console.log('[DEBUG] Theme set to:', args.theme);
           }
         }
 

@@ -10,6 +10,11 @@ import type { Arguments } from 'yargs';
 export type PermissionMode = 'default' | 'autoEdit' | 'yolo';
 
 /**
+ * UI 主题
+ */
+export type ThemeName = 'default' | 'dark' | 'ocean' | 'forest' | 'sunset';
+
+/**
  * CLI 参数接口
  */
 export interface CliArguments extends Arguments {
@@ -35,6 +40,9 @@ export interface CliArguments extends Arguments {
   // 输出选项
   print?: boolean;
   outputFormat?: 'text' | 'json';
+
+  // UI 选项
+  theme?: ThemeName;
 
   // 命令相关
   init?: boolean;

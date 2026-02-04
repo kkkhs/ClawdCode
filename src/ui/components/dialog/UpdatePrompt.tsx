@@ -9,13 +9,13 @@
 
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import type { VersionCheckResult } from '../../services/VersionChecker.js';
+import type { VersionCheckResult } from '../../../services/VersionChecker.js';
 import {
   setSkipUntilVersion,
   getUpgradeCommand,
   performUpgrade,
   restartApp,
-} from '../../services/VersionChecker.js';
+} from '../../../services/VersionChecker.js';
 
 interface UpdatePromptProps {
   versionInfo: VersionCheckResult;

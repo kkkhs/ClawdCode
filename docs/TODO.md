@@ -58,7 +58,15 @@
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
 | HookManager 完整实现 | Hooks 管理器完整版 | - | 第 12 章 |
-| 交互式确认 UI | 集成 ConfirmationPrompt 到主 UI | - | 第 9 章 |
+| 交互式确认 UI | 集成 ConfirmationPrompt 到主 UI | - | 第 11 章 |
+
+## 第九章遗留
+
+| 功能 | 说明 | 依赖 | 计划章节 |
+|------|------|------|----------|
+| App.tsx 切换到 ClawdInterface | 使用完整主界面替换 MainInterface | Zustand Store | 第 11 章 |
+| 集成 MessageArea/InputArea | 使用新组件替换 ink-text-input | ClawdInterface | 第 11 章 |
+| 集成 LoadingIndicator/ChatStatusBar | 使用新组件 | ClawdInterface | 第 11 章 |
 
 ## 第八章遗留
 
@@ -66,7 +74,7 @@
 |------|------|------|----------|
 | `/compact` 命令 | 用户手动触发压缩 | slash-commands 系统 | 第 9 章 |
 | ContextFilter | 上下文过滤器 | - | 可选优化 |
-| Agent 集成 ContextManager | Agent 使用上下文管理 | UI/Store | 第 11 章 |
+| Agent 集成 ContextManager | Agent 使用上下文管理（含会话持久化保存） | UI/Store | 第 11 章 |
 
 ---
 
@@ -98,3 +106,12 @@
 | MemoryStore 内存存储 | 第 8 章 | 2026-02-03 |
 | CacheStore LRU 缓存 | 第 8 章 | 2026-02-03 |
 | --continue/--resume 参数 | 第 8 章 | 2026-02-03 |
+| 主题系统 (ThemeManager) | 第 9 章 | 2026-02-03 |
+| 焦点管理系统 (FocusManager) | 第 9 章 | 2026-02-03 |
+| Markdown 解析器 | 第 9 章 | 2026-02-03 |
+| MessageRenderer 消息渲染 | 第 9 章 | 2026-02-03 |
+| CodeHighlighter 代码高亮 | 第 9 章 | 2026-02-03 |
+| CustomTextInput 自定义输入 | 第 9 章 | 2026-02-03 |
+| InputArea 输入区域 | 第 9 章 | 2026-02-03 |
+| ClawdInterface 主界面 | 第 9 章 | 2026-02-03 |
+| 自定义 Hooks (useTerminalWidth 等) | 第 9 章 | 2026-02-03 |
