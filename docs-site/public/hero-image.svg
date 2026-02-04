@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#bd34fe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#41d1ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Robot head -->
+  <rect x="40" y="30" width="120" height="100" rx="20" fill="url(#heroGrad)"/>
+  <!-- Eyes -->
+  <circle cx="75" cy="70" r="15" fill="white"/>
+  <circle cx="125" cy="70" r="15" fill="white"/>
+  <circle cx="75" cy="70" r="8" fill="#333"/>
+  <circle cx="125" cy="70" r="8" fill="#333"/>
+  <!-- Antenna -->
+  <line x1="100" y1="30" x2="100" y2="10" stroke="#bd34fe" stroke-width="4"/>
+  <circle cx="100" cy="8" r="6" fill="#41d1ff"/>
+  <!-- Mouth/Terminal -->
+  <rect x="60" y="95" width="80" height="25" rx="5" fill="white"/>
+  <text x="70" y="113" font-family="monospace" font-size="12" fill="#333">&gt;_</text>
+  <!-- Code brackets -->
+  <text x="25" y="180" font-family="monospace" font-size="40" fill="#bd34fe">{</text>
+  <text x="155" y="180" font-family="monospace" font-size="40" fill="#41d1ff">}</text>
+</svg>

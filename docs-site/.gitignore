@@ -1,0 +1,10 @@
+# VitePress
+.vitepress/dist
+.vitepress/cache
+
+# Node
+node_modules
+*.log
+
+# OS
+.DS_Store
