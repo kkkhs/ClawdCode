@@ -2096,6 +2096,36 @@ Examples:
 
 ---
 
+## 3.12 本章遗留项
+
+::: info 以下功能将在后续章节实现
+本章建立了 CLI 框架，部分高级功能需要其他模块支持。
+:::
+
+| 功能 | 说明 | 计划章节 |
+|------|------|----------|
+| **Zustand Store 集成** | `initializeStoreState`、`appActions()` | 第 11 章 |
+| **运行时配置合并** | `mergeRuntimeConfig` | 第 11 章 |
+| **子命令 `mcp`** | MCP 服务器管理 | 第 10 章 |
+| **子命令 `doctor`** | 诊断命令 | 第 12 章 |
+| **子命令 `update`** | 更新命令 | 第 12 章 |
+| **HookManager** | Hooks 管理器 | 第 12 章 |
+| **McpRegistry** | MCP 注册表 | 第 10 章 |
+| **registerCleanup** | 优雅退出清理 | 第 12 章 |
+
+### 当前状态
+
+本章实现的 CLI 框架是**完整可用**的：
+
+- ✅ yargs 命令行解析
+- ✅ 中间件链（权限验证、配置加载、输出验证）
+- ✅ ConfigManager 配置管理
+- ✅ VersionChecker 版本检查
+- ✅ UpdatePrompt 更新提示组件
+- ✅ 完整启动流程
+
+---
+
 ## 下一章预告
 
 在 **第四章** 中，我们将：

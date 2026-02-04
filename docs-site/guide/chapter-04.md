@@ -1174,6 +1174,34 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
 
 ---
 
+## 4.9 本章遗留项
+
+::: info 以下功能将在后续章节实现
+本章实现了 Agent 核心和 Agentic Loop，部分高级功能需要其他模块支持。
+:::
+
+| 功能 | 说明 | 计划章节 |
+|------|------|----------|
+| **System Prompt 构建** | 四层架构提示词 | 第 5 章 |
+| **工具系统集成** | ToolRegistry + 内置工具 | 第 6 章 |
+| **执行管道** | ExecutionPipeline 七阶段 | 第 7 章 |
+| **上下文压缩** | CompactionService | 第 8 章 |
+| **@ 文件提及处理** | `processAtMentions` | 第 9 章 |
+| **工具白名单** | `applyToolWhitelist` | 第 9 章 |
+
+### 当前状态
+
+本章实现的 Agent 核心是**可运行**的（纯对话模式）：
+
+- ✅ 无状态 Agent 设计
+- ✅ Agentic Loop 核心循环
+- ✅ ChatService LLM 通信
+- ✅ 轮次控制和中断处理
+- ✅ 意图未完成检测
+- ⏳ 工具调用返回占位结果（第 6 章实现）
+
+---
+
 ## 下一章预告
 
 在 **第五章** 中，我们将：

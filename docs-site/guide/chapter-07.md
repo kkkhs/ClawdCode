@@ -1581,6 +1581,28 @@ export class Agent {
 
 ---
 
+## 7.10 本章遗留项
+
+::: info 以下功能将在后续章节实现
+根据项目规划，部分功能需要其他模块支持，将在后续章节补充。
+:::
+
+| 功能 | 说明 | 计划章节 |
+|------|------|----------|
+| **HookManager 完整实现** | Pre/Post Tool Hooks 管理器 | 第 12 章 |
+| **交互式确认 UI 集成** | 将 ConfirmationPrompt 集成到主 UI 流程 | 第 11 章 |
+
+### 当前状态
+
+本章实现的执行管道是**完整可用**的，包括：
+- ✅ 七阶段管道架构
+- ✅ 权限检查和敏感文件检测
+- ✅ 权限模式（DEFAULT/AUTO_EDIT/YOLO/PLAN）
+- ✅ ConfirmationPrompt 组件（独立可用）
+- ⏳ HookStage 和 PostHookStage 目前是空实现
+
+---
+
 ## 下一章预告
 
 在 **第八章** 中，我们将：

@@ -1919,6 +1919,34 @@ private async executeToolCall(
 
 ---
 
+## 6.11 本章遗留项
+
+::: info 以下功能将在后续章节实现
+本章实现了工具系统核心，部分高级功能需要其他模块支持。
+:::
+
+| 功能 | 说明 | 计划章节 |
+|------|------|----------|
+| **SnapshotManager** | 编辑前创建文件快照 | 第 9 章 |
+| **FileAccessTracker** | Read-Before-Write 追踪 | 第 9 章 |
+| **BackgroundShellManager** | 后台 Shell 进程管理 | 第 9 章 |
+| **MCP 工具注册** | 动态注册 MCP 工具 | 第 10 章 |
+| **权限确认流程** | 写操作用户确认 | 第 7 章 |
+
+### 当前状态
+
+本章实现的工具系统是**完整可用**的：
+
+- ✅ 工具类型系统（ToolKind、ToolResult 等）
+- ✅ 工具工厂函数 `createTool`
+- ✅ 6 个内置工具（Read、Edit、Write、Glob、Grep、Bash）
+- ✅ ToolRegistry 工具注册表
+- ✅ Plan 模式工具过滤
+- ✅ JSON Schema 自动生成
+- ⏳ 工具执行直接返回结果（第 7 章添加权限检查）
+
+---
+
 ## 下一章预告
 
 在 **第七章** 中，我们将：
