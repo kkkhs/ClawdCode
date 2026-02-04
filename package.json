@@ -16,6 +16,7 @@
     "test:tools": "bun run src/tools/test.ts",
     "test:pipeline": "bun run src/tools/execution/test.ts",
     "test:context": "bun run src/context/test.ts",
+    "test:mcp": "bun run src/mcp/test.ts",
     "prepublishOnly": "bun run build"
   },
   "keywords": [
@@ -50,6 +51,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
     "chalk": "^5.4.1",
     "glob": "^13.0.0",
     "ink": "^6.0.0",

@@ -95,7 +95,16 @@ clawdcode/
 │   │   └── CompactionService # 压缩服务
 │   ├── services/           # 服务层 (ChatService)
 │   ├── prompts/            # 提示词管理
-│   ├── mcp/                # MCP 协议（进阶）
+│   ├── mcp/                # MCP 协议（第 10 章）
+│   │   ├── types.ts        # MCP 类型定义
+│   │   ├── McpClient.ts    # MCP 客户端
+│   │   ├── McpRegistry.ts  # 服务器注册中心
+│   │   ├── createMcpTool.ts # JSON Schema → Zod 转换
+│   │   └── HealthMonitor.ts # 健康监控
+│   ├── slash-commands/     # Slash 命令
+│   │   ├── types.ts        # 命令类型
+│   │   ├── mcpCommand.ts   # /mcp 命令
+│   │   └── index.ts        # 命令注册
 │   ├── store/              # Zustand Store
 │   └── main.tsx            # CLI 入口
 ├── package.json
@@ -129,7 +138,7 @@ clawdcode/
 | 章节 | 内容 | 状态 |
 |------|------|------|
 | 09 | Ink 框架、Markdown 渲染、焦点管理 | ✅ 已完成 → [文档](09-ui-system.md) |
-| 10 | MCP 协议介绍、工具发现、服务器管理 | ⏳ 待提供 |
+| 10 | MCP 协议介绍、工具发现、服务器管理 | ✅ 已完成 → [文档](10-mcp-protocol.md) |
 | 11 | 双文件配置、Zustand Store、SSOT 架构 | ⏳ 待提供 |
 | 12 | Hooks、Subagents、Skills、IDE 集成、多端架构 | ⏳ 待提供 |
 
@@ -186,6 +195,6 @@ clawdcode/
 - [x] 第 07 章：执行管道 ✅ (七阶段管道 + 权限模型 + 确认机制)
 - [x] 第 08 章：上下文管理 ✅ (ContextManager + TokenCounter + 压缩服务 + JSONL 持久化)
 - [x] 第 09 章：UI 系统 ✅ (主题系统 + 焦点管理 + Markdown 渲染 + 代码高亮 + ClawdInterface)
-- [ ] 第 10 章：MCP 协议
+- [x] 第 10 章：MCP 协议 ✅ (McpClient + McpRegistry + createMcpTool + HealthMonitor + /mcp 命令)
 - [ ] 第 11 章：配置管理
 - [ ] 第 12 章：进阶功能

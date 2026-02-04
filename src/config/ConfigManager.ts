@@ -18,6 +18,7 @@ import {
   DEFAULT_CONFIG,
   ModelConfig,
   type PermissionConfig,
+  type McpServerConfig,
 } from './types.js';
 
 export class ConfigManager {
@@ -194,6 +195,19 @@ export class ConfigManager {
       merged.toolBlacklist = override.toolBlacklist;
     }
 
+    // 合并 MCP 服务器配置（深度合并）
+    if (override.mcpServers || base.mcpServers) {
+      merged.mcpServers = {
+        ...(base.mcpServers || {}),
+        ...(override.mcpServers || {}),
+      };
+    }
+
+    // MCP 启用状态
+    if (override.mcpEnabled !== undefined) {
+      merged.mcpEnabled = override.mcpEnabled;
+    }
+
     return merged;
   }
 
@@ -233,6 +247,20 @@ export class ConfigManager {
   }
 
   /**
+   * 获取 MCP 服务器配置
+   */
+  getMcpServers(): Record<string, McpServerConfig> {
+    return this.config.mcpServers || {};
+  }
+
+  /**
+   * 检查 MCP 是否启用
+   */
+  isMcpEnabled(): boolean {
+    return this.config.mcpEnabled !== false;
+  }
+
+  /**
    * 创建默认配置文件
    */
   async createDefaultConfig(): Promise<string> {
@@ -253,6 +281,16 @@ export class ConfigManager {
       },
       ui: {
         theme: 'dark',
+      },
+      mcpEnabled: true,
+      mcpServers: {
+        // 示例 MCP 服务器配置（已注释）
+        // github: {
+        //   type: 'stdio',
+        //   command: 'npx',
+        //   args: ['-y', '@modelcontextprotocol/server-github'],
+        //   env: { GITHUB_TOKEN: '${GITHUB_TOKEN}' },
+        // },
       },
     };
 

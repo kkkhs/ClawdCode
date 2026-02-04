@@ -33,6 +33,36 @@ export const PermissionConfigSchema = z.object({
 });
 
 /**
+ * MCP 服务器配置 Schema
+ */
+export const McpServerConfigSchema = z.object({
+  type: z.enum(['stdio', 'sse', 'http']),
+  
+  // stdio 配置
+  command: z.string().optional(),
+  args: z.array(z.string()).optional(),
+  env: z.record(z.string()).optional(),
+  cwd: z.string().optional(),
+  
+  // sse/http 配置
+  url: z.string().optional(),
+  headers: z.record(z.string()).optional(),
+  
+  // 其他配置
+  enabled: z.boolean().optional(),
+  timeout: z.number().optional(),
+  description: z.string().optional(),
+  
+  // 健康检查配置
+  healthCheck: z.object({
+    enabled: z.boolean(),
+    intervalMs: z.number(),
+    timeoutMs: z.number(),
+    maxFailures: z.number(),
+  }).optional(),
+});
+
+/**
  * 完整配置 Schema (config.json)
  */
 export const ConfigSchema = z.object({
@@ -56,12 +86,19 @@ export const ConfigSchema = z.object({
   
   // 工具黑名单
   toolBlacklist: z.array(z.string()).optional(),
+  
+  // MCP 服务器配置
+  mcpServers: z.record(McpServerConfigSchema).optional(),
+  
+  // MCP 是否启用
+  mcpEnabled: z.boolean().optional(),
 });
 
 // 类型导出
 export type ModelConfig = z.infer<typeof ModelConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type PermissionConfig = z.infer<typeof PermissionConfigSchema>;
+export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 export type Config = z.infer<typeof ConfigSchema>;
 
 /**
@@ -80,4 +117,6 @@ export const DEFAULT_CONFIG: Config = {
     ask: [],
   },
   defaultPermissionMode: 'default',
+  mcpServers: {},
+  mcpEnabled: true,
 };

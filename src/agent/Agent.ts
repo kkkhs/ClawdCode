@@ -32,6 +32,7 @@ import {
   type PipelineExecutionContext,
 } from '../tools/index.js';
 import { configManager } from '../config/ConfigManager.js';
+import { McpRegistry } from '../mcp/index.js';
 
 // ========== 常量 ==========
 
@@ -131,7 +132,12 @@ export class Agent {
         this.toolRegistry.register(tool);
       }
 
-      // 4. 创建执行管道（使用 settings.json 中的权限配置）
+      // 4. 注册 MCP 工具（如果启用）
+      if (configManager.isMcpEnabled()) {
+        await this.registerMcpTools();
+      }
+
+      // 5. 创建执行管道（使用 settings.json 中的权限配置）
       const permissionConfig = configManager.getPermissionConfig();
       const defaultMode = configManager.getDefaultPermissionMode() as 'default' | 'autoEdit' | 'yolo' | 'plan';
       
@@ -474,6 +480,52 @@ export class Agent {
    */
   getExecutionPipeline(): ExecutionPipeline {
     return this.executionPipeline;
+  }
+
+  /**
+   * 注册 MCP 工具
+   * 
+   * 从配置中加载 MCP 服务器，连接并注册其工具
+   */
+  private async registerMcpTools(): Promise<void> {
+    try {
+      // 1. 获取 MCP 服务器配置
+      const mcpServers = configManager.getMcpServers();
+      
+      if (Object.keys(mcpServers).length === 0) {
+        return; // 没有配置任何 MCP 服务器
+      }
+
+      console.log(`[Agent] 正在加载 MCP 服务器 (${Object.keys(mcpServers).length} 个)...`);
+
+      // 2. 注册并连接服务器
+      const registry = McpRegistry.getInstance();
+      await registry.registerServers(mcpServers);
+
+      // 3. 获取工具并注册到 Agent 的工具注册表
+      const mcpTools = await registry.getAvailableTools();
+      
+      if (mcpTools.length > 0) {
+        for (const tool of mcpTools) {
+          try {
+            this.toolRegistry.register(tool);
+          } catch (error) {
+            console.warn(`[Agent] 注册 MCP 工具 "${tool.name}" 失败:`, (error as Error).message);
+          }
+        }
+        console.log(`[Agent] 已加载 ${mcpTools.length} 个 MCP 工具`);
+      }
+
+      // 4. 监听工具更新事件
+      registry.on('toolsUpdated', async () => {
+        // 重新获取工具列表（TODO：增量更新）
+        console.log('[Agent] MCP 工具列表已更新');
+      });
+
+    } catch (error) {
+      console.warn('[Agent] MCP 工具加载失败:', (error as Error).message);
+      // MCP 加载失败不应该阻止 Agent 启动
+    }
   }
 }
 

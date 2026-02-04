@@ -9,14 +9,14 @@
 | `initializeStoreState` | 初始化应用状态到 Store | Zustand Store | 第 11 章 |
 | `mergeRuntimeConfig` | 合并 CLI 参数到运行时配置 | RuntimeConfig 类型 | 第 11 章 |
 | `appActions().setInitializationStatus` | 设置初始化状态 | Zustand actions | 第 11 章 |
-| 子命令 `mcp` | MCP 服务器管理 | MCP 模块 | 第 10 章 |
+| ~~子命令 `mcp`~~ | ~~MCP 服务器管理~~ | ~~MCP 模块~~ | ✅ 第 10 章 |
 | 子命令 `doctor` | 诊断命令 | 诊断模块 | 第 12 章 |
 | 子命令 `update` | 更新命令 | - | 第 12 章 |
 | `subagentRegistry` | Subagent 注册表 | Subagent 系统 | 第 12 章 |
 | `HookManager` | Hooks 管理器 | Hooks 系统 | 第 12 章 |
 | `registerCleanup` | 注册退出清理函数 | GracefulShutdown | 第 12 章 |
 | `BackgroundShellManager` | 后台 Shell 管理 | Shell 工具 | 第 6 章 |
-| `McpRegistry` | MCP 注册表 | MCP 模块 | 第 10 章 |
+| ~~`McpRegistry`~~ | ~~MCP 注册表~~ | ~~MCP 模块~~ | ✅ 第 10 章 |
 
 ## 第四章遗留
 
@@ -50,7 +50,7 @@
 | FileAccessTracker | Read-Before-Write 追踪 | - | 第 9 章 |
 | BackgroundShellManager | 后台 Shell 进程管理 | - | 第 9 章 |
 | ~~权限确认流程~~ | ~~写操作用户确认~~ | ~~ExecutionPipeline~~ | ✅ 第 7 章 |
-| MCP 工具注册 | 动态注册 MCP 工具 | McpRegistry | 第 10 章 |
+| ~~MCP 工具注册~~ | ~~动态注册 MCP 工具~~ | ~~McpRegistry~~ | ✅ 第 10 章 |
 | ~~集成到 Agent~~ | ~~Agent 使用工具系统~~ | ~~ExecutionPipeline~~ | ✅ 第 7 章 |
 
 ## 第七章遗留
@@ -75,6 +75,16 @@
 | `/compact` 命令 | 用户手动触发压缩 | slash-commands 系统 | 第 9 章 |
 | ContextFilter | 上下文过滤器 | - | 可选优化 |
 | Agent 集成 ContextManager | Agent 使用上下文管理（含会话持久化保存） | UI/Store | 第 11 章 |
+
+## 第十章遗留
+
+| 功能 | 说明 | 依赖 | 计划章节 |
+|------|------|------|----------|
+| `loadMcpConfigFromCli` | 从 CLI 参数 `--mcp-config` 加载临时 MCP 配置 | Zustand Store | 第 11 章 |
+| `OAuthProvider` | OAuth 2.0 认证流程（需要浏览器交互） | - | 可选优化 |
+| `src/mcp/auth/` 目录 | OAuth 认证相关文件 | OAuthProvider | 可选优化 |
+| `--mcp-config` CLI 参数 | CLI 传递临时 MCP 配置 | loadMcpConfigFromCli | 第 11 章 |
+| Slash 命令集成到 UI | 在 UI 中处理 `/mcp` 等 slash 命令 | UI 系统 | 第 12 章 |
 
 ---
 
@@ -115,3 +125,10 @@
 | InputArea 输入区域 | 第 9 章 | 2026-02-03 |
 | ClawdInterface 主界面 | 第 9 章 | 2026-02-03 |
 | 自定义 Hooks (useTerminalWidth 等) | 第 9 章 | 2026-02-03 |
+| McpClient MCP 客户端 | 第 10 章 | 2026-02-03 |
+| McpRegistry MCP 注册中心 | 第 10 章 | 2026-02-03 |
+| HealthMonitor 健康监控 | 第 10 章 | 2026-02-03 |
+| createMcpTool JSON Schema 转换器 | 第 10 章 | 2026-02-03 |
+| /mcp Slash 命令 | 第 10 章 | 2026-02-03 |
+| ConfigManager MCP 配置支持 | 第 10 章 | 2026-02-03 |
+| Agent 集成 MCP 工具 | 第 10 章 | 2026-02-03 |

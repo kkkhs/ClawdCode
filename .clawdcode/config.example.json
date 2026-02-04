@@ -24,5 +24,13 @@
     ],
     "ask": []
   },
-  "defaultPermissionMode": "default"
+  "defaultPermissionMode": "default",
+  "mcpEnabled": true,
+  "mcpServers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "mcp-server-filesystem",
+      "args": ["./"]
+    }
+  }
 }
