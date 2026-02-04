@@ -15,8 +15,11 @@ import TextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
 import { Agent } from '../agent/Agent.js';
 import type { Message, ChatContext } from '../agent/types.js';
-import { ErrorBoundary } from './components/ErrorBoundary.js';
-import { UpdatePrompt } from './components/UpdatePrompt.js';
+import { ErrorBoundary } from './components/common/ErrorBoundary.js';
+import { UpdatePrompt } from './components/dialog/UpdatePrompt.js';
+import { MessageRenderer } from './components/markdown/MessageRenderer.js';
+import { useTerminalWidth } from './hooks/useTerminalWidth.js';
+import { themeManager } from './themes/ThemeManager.js';
 import type { PermissionMode } from '../cli/types.js';
 import type { VersionCheckResult } from '../services/VersionChecker.js';
 
@@ -64,6 +67,10 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<string | null>(null);
+  
+  // 获取终端宽度和主题
+  const terminalWidth = useTerminalWidth();
+  const theme = themeManager.getTheme();
   
   // Agent 实例和上下文
   const agentRef = useRef<Agent | null>(null);
@@ -212,35 +219,36 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
     <Box flexDirection="column" padding={1}>
       {/* 标题 */}
       <Box marginBottom={1}>
-        <Text bold color="cyan">🤖 ClawdCode - CLI Coding Agent</Text>
-        {debug && <Text color="gray"> [DEBUG]</Text>}
+        <Text bold color={theme.colors.primary}>🤖 ClawdCode - CLI Coding Agent</Text>
+        {debug && <Text color={theme.colors.text.muted}> [DEBUG]</Text>}
       </Box>
 
       {/* 会话状态 */}
       {sessionStatus && (
         <Box marginBottom={1}>
-          <Text color="gray">{sessionStatus}</Text>
+          <Text color={theme.colors.text.muted}>{sessionStatus}</Text>
         </Box>
       )}
 
-      {/* 消息历史 */}
+      {/* 消息历史 - 使用 MessageRenderer 渲染 Markdown */}
       <Box flexDirection="column" marginBottom={1}>
         {uiMessages.map((msg, index) => (
-          <Box key={index} marginBottom={1}>
-            <Text color={msg.role === 'user' ? 'green' : 'blue'}>
-              {msg.role === 'user' ? '> ' : '🤖 '}
-            </Text>
-            <Text wrap="wrap">{msg.content}</Text>
-          </Box>
+          <MessageRenderer
+            key={index}
+            content={msg.content}
+            role={msg.role}
+            terminalWidth={terminalWidth - 2}
+            showPrefix={true}
+          />
         ))}
 
         {/* 加载中 */}
         {isLoading && (
           <Box>
-            <Text color="yellow">
+            <Text color={theme.colors.warning}>
               <Spinner type="dots" />
             </Text>
-            <Text color="yellow"> Thinking...</Text>
+            <Text color={theme.colors.warning}> Thinking...</Text>
           </Box>
         )}
       </Box>
@@ -248,7 +256,7 @@ const MainInterface: React.FC<MainInterfaceProps> = ({
       {/* 输入框 */}
       {!isLoading && (
         <Box>
-          <Text color="green">{'> '}</Text>
+          <Text color={theme.colors.success}>{'> '}</Text>
           <TextInput
             value={input}
             onChange={setInput}

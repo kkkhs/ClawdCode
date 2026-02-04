@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import type { ConfirmationDetails, ConfirmationResponse } from '../../agent/types.js';
+import type { ConfirmationDetails, ConfirmationResponse } from '../../../agent/types.js';
 
 interface ConfirmationPromptProps {
   details: ConfirmationDetails;

@@ -1,0 +1,225 @@
+/**
+ * CodeHighlighter - 代码语法高亮组件
+ * 
+ * 使用 lowlight（highlight.js 的虚拟 DOM 版本）实现语法高亮
+ */
+
+import React, { useMemo } from 'react';
+import { Box, Text } from 'ink';
+import { common, createLowlight } from 'lowlight';
+import { themeManager } from '../../themes/index.js';
+import type { SyntaxColors } from '../../themes/types.js';
+
+// 创建 lowlight 实例（支持常用语言）
+const lowlight = createLowlight(common);
+
+interface CodeHighlighterProps {
+  /** 代码内容 */
+  content: string;
+  /** 代码语言 */
+  language?: string;
+  /** 是否显示行号 */
+  showLineNumbers?: boolean;
+  /** 终端宽度 */
+  terminalWidth?: number;
+  /** 可见高度（用于性能优化） */
+  availableHeight?: number;
+  /** 起始行号 */
+  startLine?: number;
+}
+
+/**
+ * 代码高亮组件
+ */
+export const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
+  content,
+  language,
+  showLineNumbers = true,
+  terminalWidth = 80,
+  availableHeight = 50,
+  startLine = 1,
+}) => {
+  const theme = themeManager.getTheme();
+  const syntaxColors = theme.colors.syntax;
+
+  // 性能优化：仅高亮可见行
+  const { lines, hiddenLinesCount, actualStartLine } = useMemo(() => {
+    let allLines = content.split('\n');
+    let hidden = 0;
+    let start = startLine;
+
+    if (availableHeight && allLines.length > availableHeight) {
+      hidden = allLines.length - availableHeight;
+      allLines = allLines.slice(hidden); // 只保留底部可见行
+      start = startLine + hidden;
+    }
+
+    return {
+      lines: allLines,
+      hiddenLinesCount: hidden,
+      actualStartLine: start,
+    };
+  }, [content, availableHeight, startLine]);
+
+  // 计算行号宽度
+  const totalLines = actualStartLine + lines.length - 1;
+  const lineNumberWidth = showLineNumbers ? String(totalLines).length + 1 : 0;
+
+  return (
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={theme.colors.border.light}
+      paddingX={1}
+      marginY={1}
+    >
+      {/* 语言标签 */}
+      {language && (
+        <Box marginBottom={1}>
+          <Text color={theme.colors.text.muted} dimColor>
+            {language}
+          </Text>
+        </Box>
+      )}
+
+      {/* 隐藏行提示 */}
+      {hiddenLinesCount > 0 && (
+        <Box>
+          <Text dimColor>... {hiddenLinesCount} lines hidden ...</Text>
+        </Box>
+      )}
+
+      {/* 代码内容 */}
+      {lines.map((line, index) => {
+        const lineNumber = actualStartLine + index;
+        
+        return (
+          <Box key={index} flexDirection="row">
+            {/* 行号 */}
+            {showLineNumbers && (
+              <Box width={lineNumberWidth} marginRight={1}>
+                <Text dimColor>
+                  {String(lineNumber).padStart(lineNumberWidth - 1, ' ')}
+                </Text>
+              </Box>
+            )}
+
+            {/* 高亮代码 */}
+            <Box flexShrink={1}>
+              <HighlightedLine line={line} language={language} syntaxColors={syntaxColors} />
+            </Box>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+};
+
+/**
+ * 高亮单行代码
+ */
+const HighlightedLine: React.FC<{
+  line: string;
+  language?: string;
+  syntaxColors: SyntaxColors;
+}> = React.memo(({ line, language, syntaxColors }) => {
+  const highlighted = useMemo(() => {
+    try {
+      if (!language || !lowlight.registered(language)) {
+        // 自动检测语言
+        const result = lowlight.highlightAuto(line);
+        return renderHastNode(result, syntaxColors);
+      }
+
+      const result = lowlight.highlight(language, line);
+      return renderHastNode(result, syntaxColors);
+    } catch {
+      return <Text color={syntaxColors.default}>{line}</Text>;
+    }
+  }, [line, language, syntaxColors]);
+
+  return <>{highlighted}</>;
+});
+
+HighlightedLine.displayName = 'HighlightedLine';
+
+/**
+ * 将 lowlight 的 HAST 节点转换为 React 组件
+ */
+function renderHastNode(
+  node: any,
+  syntaxColors: SyntaxColors,
+  key?: number
+): React.ReactNode {
+  if (node.type === 'text') {
+    return <Text key={key}>{node.value}</Text>;
+  }
+
+  if (node.type === 'root') {
+    return (
+      <>
+        {node.children?.map((child: any, index: number) =>
+          renderHastNode(child, syntaxColors, index)
+        )}
+      </>
+    );
+  }
+
+  if (node.type === 'element') {
+    const className = node.properties?.className?.[0] || '';
+    const color = getColorForClass(className, syntaxColors);
+
+    const children = node.children?.map((child: any, index: number) =>
+      renderHastNode(child, syntaxColors, index)
+    );
+
+    return (
+      <Text key={key} color={color}>
+        {children}
+      </Text>
+    );
+  }
+
+  return <Text key={key}></Text>;
+}
+
+/**
+ * 根据 CSS 类名获取颜色
+ */
+function getColorForClass(className: string, syntaxColors: SyntaxColors): string {
+  // hljs 类名映射
+  if (className.includes('comment') || className.includes('prolog')) {
+    return syntaxColors.comment;
+  }
+  if (className.includes('string') || className.includes('char') || className.includes('template-string')) {
+    return syntaxColors.string;
+  }
+  if (className.includes('number') || className.includes('boolean') || className.includes('constant')) {
+    return syntaxColors.number;
+  }
+  if (className.includes('keyword') || className.includes('selector') || className.includes('important')) {
+    return syntaxColors.keyword;
+  }
+  if (className.includes('function') || className.includes('method')) {
+    return syntaxColors.function;
+  }
+  if (className.includes('variable') || className.includes('property')) {
+    return syntaxColors.variable;
+  }
+  if (className.includes('operator') || className.includes('punctuation')) {
+    return syntaxColors.operator;
+  }
+  if (className.includes('type') || className.includes('class-name') || className.includes('builtin')) {
+    return syntaxColors.type;
+  }
+  if (className.includes('tag') || className.includes('name')) {
+    return syntaxColors.tag;
+  }
+  if (className.includes('attr')) {
+    return syntaxColors.attr;
+  }
+
+  return syntaxColors.default;
+}
+
+export default CodeHighlighter;

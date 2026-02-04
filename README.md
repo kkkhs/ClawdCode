@@ -2,6 +2,8 @@
 
 A CLI Coding Agent inspired by Claude Code - An AI-powered coding assistant that can read, write, and execute code directly in your terminal.
 
+> 📚 **[查看完整教程文档](https://kkkhs.github.io/ClawdCode/)** - 从零开始实现一个 AI CLI Coding Agent
+
 ## Features
 
 - **Interactive CLI** - Natural language interface for coding tasks
@@ -165,6 +167,28 @@ User Input → Build Messages → Call LLM → Tool Calls?
                                             ↓ No
                                       Return Response (Task Complete)
 ```
+
+## Documentation
+
+📚 **[完整教程文档](https://kkkhs.github.io/ClawdCode/)** - 从零开始实现一个 AI CLI Coding Agent
+
+### 教程目录
+
+| 章节 | 内容 |
+|------|------|
+| **基础篇** | |
+| 第 1 章 | Coding Agent 概述 - 理解 AI Agent 架构 |
+| 第 2 章 | 项目搭建 - 技术栈选择与环境配置 |
+| 第 3 章 | CLI 入口 - yargs、配置管理、版本检查 |
+| **核心篇** | |
+| 第 4 章 | Agent 核心 - 无状态设计与 Agentic Loop |
+| 第 5 章 | System Prompt - 四层提示词架构 |
+| 第 6 章 | 工具系统 - 工具定义、注册与执行 |
+| 第 7 章 | 执行管道 - 七阶段执行流程与权限控制 |
+| 第 8 章 | 上下文管理 - Token 计数与智能压缩 |
+| **进阶篇** | |
+| 第 9 章 | UI 系统 - Ink 组件与交互设计 |
+| 第 10 章 | MCP 协议 - 外部工具集成 |
 
 ## Requirements
 
