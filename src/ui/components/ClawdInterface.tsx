@@ -513,9 +513,13 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   if (selectorState.isVisible) {
     return (
       <Box flexDirection="column" width="100%">
-        {/* 标题 */}
-        <Box marginBottom={1}>
-          <Text bold color={theme.colors.primary}>🤖 ClawdCode - CLI Coding Agent</Text>
+        {/* 标题 - 极客风格 */}
+        <Box flexDirection="column" marginBottom={1}>
+          <Box>
+            <Text color={theme.colors.text.muted}>┌─</Text>
+            <Text bold color={theme.colors.primary}> clawd</Text>
+            <Text color={theme.colors.text.secondary}>code </Text>
+          </Box>
         </Box>
 
         {/* 消息区域（简化显示） */}
@@ -546,10 +550,17 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   // 主界面
   return (
     <Box flexDirection="column" width="100%">
-      {/* 标题 */}
-      <Box marginBottom={1}>
-        <Text bold color={theme.colors.primary}>🤖 ClawdCode - CLI Coding Agent</Text>
-        {debug && <Text color={theme.colors.text.muted}> [DEBUG]</Text>}
+      {/* 标题 - 极客风格 */}
+      <Box flexDirection="column" marginBottom={1}>
+        <Box>
+          <Text color={theme.colors.text.muted}>┌─</Text>
+          <Text bold color={theme.colors.primary}> clawd</Text>
+          <Text color={theme.colors.text.secondary}>code </Text>
+          <Text color={theme.colors.text.muted}>─ </Text>
+          <Text color={theme.colors.text.muted} dimColor>v{process.env.npm_package_version || '0.1.0'}</Text>
+          {debug && <Text color={theme.colors.warning}> [debug]</Text>}
+        </Box>
+        <Text color={theme.colors.text.muted} dimColor>│  AI-powered coding agent · /help for commands</Text>
       </Box>
 
       {/* 消息区域 */}

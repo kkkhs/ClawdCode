@@ -155,7 +155,7 @@ export class ThemeManager {
   }
 
   /**
-   * 获取角色样式
+   * 获取角色样式（极简风格）
    */
   getRoleStyle(role: 'user' | 'assistant' | 'system' | 'tool'): RoleStyle {
     const colors = this.currentTheme.colors;
@@ -164,25 +164,25 @@ export class ThemeManager {
       case 'user':
         return {
           color: colors.success,
-          prefix: '> ',
+          prefix: '› ',
           bold: false,
         };
       case 'assistant':
         return {
           color: colors.primary,
-          prefix: '🤖 ',
+          prefix: '◆ ',
           bold: false,
         };
       case 'system':
         return {
           color: colors.warning,
-          prefix: '⚙️ ',
+          prefix: '⚡',
           bold: true,
         };
       case 'tool':
         return {
           color: colors.info,
-          prefix: '🔧 ',
+          prefix: '→ ',
           bold: false,
         };
       default:

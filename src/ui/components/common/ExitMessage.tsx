@@ -36,30 +36,29 @@ export const ExitMessage: React.FC<ExitMessageProps> = ({
     return () => clearTimeout(timer);
   }, [exit, exitDelay]);
 
+  const shortId = sessionId.length > 16 
+    ? `${sessionId.slice(0, 8)}..${sessionId.slice(-6)}`
+    : sessionId;
+
   return (
     <Box flexDirection="column" paddingY={1}>
-      <Box>
-        <Text color={theme.colors.border.light}>{'━'.repeat(60)}</Text>
+      <Box marginBottom={1}>
+        <Text color={theme.colors.text.muted}>─ </Text>
+        <Text color={theme.colors.warning}>session saved</Text>
+        <Text color={theme.colors.text.muted}> [</Text>
+        <Text color={theme.colors.info}>{shortId}</Text>
+        <Text color={theme.colors.text.muted}>]</Text>
       </Box>
       
-      <Box marginY={1} flexDirection="column">
-        <Text>
-          <Text color="yellow">👋 Session saved!</Text>
-          <Text> To resume this conversation:</Text>
-        </Text>
-        
-        <Box marginTop={1} flexDirection="column" marginLeft={3}>
-          <Text color="green">clawdcode --continue</Text>
-          <Text color={theme.colors.text.muted}>or</Text>
-          <Text>
-            <Text color="green">clawdcode --resume </Text>
-            <Text color="cyan">{sessionId}</Text>
-          </Text>
+      <Box flexDirection="column" marginLeft={2}>
+        <Text color={theme.colors.text.muted}>resume: </Text>
+        <Box marginLeft={2}>
+          <Text color={theme.colors.success}>clawdcode --continue</Text>
         </Box>
-      </Box>
-      
-      <Box>
-        <Text color={theme.colors.border.light}>{'━'.repeat(60)}</Text>
+        <Box marginLeft={2}>
+          <Text color={theme.colors.success}>clawdcode --resume </Text>
+          <Text color={theme.colors.info}>{sessionId}</Text>
+        </Box>
       </Box>
     </Box>
   );

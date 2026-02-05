@@ -1,7 +1,7 @@
 /**
  * ChatStatusBar - 聊天状态栏组件
  * 
- * 显示当前会话状态、模型信息、Token 使用量等
+ * 简约极客风格的状态栏，显示核心会话信息
  */
 
 import React from 'react';
@@ -30,7 +30,7 @@ interface ChatStatusBarProps {
 }
 
 /**
- * 格式化 Token 数量
+ * 格式化 Token 数量（简洁格式）
  */
 function formatTokens(count: number): string {
   if (count >= 1000000) {
@@ -43,7 +43,7 @@ function formatTokens(count: number): string {
 }
 
 /**
- * 聊天状态栏
+ * 聊天状态栏 - 极简风格
  */
 export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
   model,
@@ -60,70 +60,109 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
     return null;
   }
 
-  const items: Array<{ label: string; value: string; color?: string }> = [];
+  // 构建状态项（使用简洁的文字标签）
+  const segments: Array<{ content: React.ReactNode; dimmed?: boolean }> = [];
 
+  // Model - 核心信息，高亮显示
   if (model) {
-    items.push({ label: '🤖', value: model, color: theme.colors.primary });
+    segments.push({
+      content: (
+        <>
+          <Text color={theme.colors.text.muted}>model:</Text>
+          <Text color={theme.colors.primary} bold>{model}</Text>
+        </>
+      ),
+    });
   }
 
+  // Messages count
   if (messageCount !== undefined) {
-    items.push({ label: '💬', value: String(messageCount) });
+    segments.push({
+      content: (
+        <>
+          <Text color={theme.colors.text.muted}>msgs:</Text>
+          <Text color={theme.colors.text.secondary}>{messageCount}</Text>
+        </>
+      ),
+    });
   }
 
-  // 显示队列中的命令数量
+  // Queue (only if > 0)
   if (queuedCommands !== undefined && queuedCommands > 0) {
-    items.push({
-      label: '📋',
-      value: `${queuedCommands} queued`,
-      color: theme.colors.warning,
+    segments.push({
+      content: (
+        <>
+          <Text color={theme.colors.text.muted}>queue:</Text>
+          <Text color={theme.colors.warning}>{queuedCommands}</Text>
+        </>
+      ),
     });
   }
 
-  if (tokenUsage) {
-    items.push({
-      label: '📊',
-      value: `${formatTokens(tokenUsage.input)}/${formatTokens(tokenUsage.output)} tokens`,
-      color: theme.colors.info,
+  // Tokens - input/output format
+  if (tokenUsage && tokenUsage.total > 0) {
+    segments.push({
+      content: (
+        <>
+          <Text color={theme.colors.text.muted}>tokens:</Text>
+          <Text color={theme.colors.info}>
+            {formatTokens(tokenUsage.input)}/{formatTokens(tokenUsage.output)}
+          </Text>
+        </>
+      ),
     });
   }
 
+  // Theme
   if (themeName) {
-    items.push({ label: '🎨', value: themeName });
+    segments.push({
+      content: (
+        <>
+          <Text color={theme.colors.text.muted}>theme:</Text>
+          <Text color={theme.colors.text.secondary}>{themeName}</Text>
+        </>
+      ),
+      dimmed: true,
+    });
   }
 
+  // Session ID (truncated for display)
   if (sessionId) {
-    // 显示完整会话 ID
-    items.push({ label: '📝', value: sessionId, color: theme.colors.text.muted });
+    const shortId = sessionId.length > 12 
+      ? `${sessionId.slice(0, 8)}..${sessionId.slice(-4)}`
+      : sessionId;
+    segments.push({
+      content: (
+        <>
+          <Text color={theme.colors.text.muted}>sid:</Text>
+          <Text color={theme.colors.text.muted}>{shortId}</Text>
+        </>
+      ),
+      dimmed: true,
+    });
   }
 
-  if (items.length === 0) {
+  if (segments.length === 0) {
     return null;
   }
 
   return (
     <Box
       flexDirection="row"
-      justifyContent="flex-end"
-      paddingX={1}
-      borderStyle="single"
-      borderColor={theme.colors.border.light}
-      borderTop={false}
-      borderLeft={false}
-      borderRight={false}
+      justifyContent="flex-start"
+      paddingX={0}
+      marginTop={0}
     >
-      {items.map((item, index) => (
+      <Text color={theme.colors.text.muted} dimColor>─ </Text>
+      {segments.map((seg, index) => (
         <React.Fragment key={index}>
           {index > 0 && (
-            <Text color={theme.colors.border.light}> │ </Text>
+            <Text color={theme.colors.text.muted} dimColor> · </Text>
           )}
-          <Text>
-            <Text>{item.label} </Text>
-            <Text color={item.color || theme.colors.text.secondary}>
-              {item.value}
-            </Text>
-          </Text>
+          <Text dimColor={seg.dimmed}>{seg.content}</Text>
         </React.Fragment>
       ))}
+      <Text color={theme.colors.text.muted} dimColor> ─</Text>
     </Box>
   );
 };
