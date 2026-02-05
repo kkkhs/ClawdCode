@@ -74,6 +74,7 @@ export default defineConfig({
             { text: '第 11 章：状态管理', link: '/guide/chapter-11' },
             { text: '第 11b 章：命令历史与队列', link: '/guide/chapter-11b' },
             { text: '第 12a 章：Slash Commands', link: '/guide/chapter-12a' },
+            { text: '第 12b 章：交互式 Commands', link: '/guide/chapter-12b' },
           ]
         }
       ]

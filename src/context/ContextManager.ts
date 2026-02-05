@@ -385,6 +385,13 @@ export class ContextManager {
   }
 
   /**
+   * 替换消息列表（用于压缩后更新）
+   */
+  replaceMessages(messages: ContextMessage[]): void {
+    this.memory.setMessages(messages);
+  }
+
+  /**
    * 获取缓存项
    */
   getCache<T>(key: string): T | undefined {

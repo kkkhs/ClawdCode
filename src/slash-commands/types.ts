@@ -14,6 +14,16 @@ export type CommandCategory =
   | 'custom';      // 自定义命令
 
 /**
+ * 选择器选项（用于交互式选择）
+ */
+export interface SelectorOption<T = string> {
+  value: T;
+  label: string;
+  description?: string;
+  isCurrent?: boolean;
+}
+
+/**
  * Slash 命令上下文
  */
 export interface SlashCommandContext {
@@ -23,6 +33,21 @@ export interface SlashCommandContext {
   sessionId?: string;
   /** 用户消息历史 */
   messages?: any[];
+  /** ContextManager 实例（用于 /compact 等命令） */
+  contextManager?: any;
+  /** ChatService 实例（用于 LLM 调用） */
+  chatService?: any;
+  /** 模型名称 */
+  modelName?: string;
+  /** 显示选择器的回调 */
+  showSelector?: <T>(options: {
+    title: string;
+    options: SelectorOption<T>[];
+    onSelect: (value: T) => void;
+    onCancel: () => void;
+  }) => void;
+  /** 隐藏选择器的回调 */
+  hideSelector?: () => void;
 }
 
 /**
@@ -32,7 +57,7 @@ export interface SlashCommandResult {
   /** 是否成功 */
   success: boolean;
   /** 结果类型（用于 UI 展示） */
-  type?: 'success' | 'error' | 'info' | 'silent';
+  type?: 'success' | 'error' | 'info' | 'silent' | 'selector';
   /** 内容（Markdown 格式） */
   content?: string;
   /** 消息（简短提示） */
@@ -43,6 +68,13 @@ export interface SlashCommandResult {
   shouldContinue?: boolean;
   /** 额外数据 */
   data?: any;
+  /** 选择器配置（type 为 'selector' 时使用） */
+  selector?: {
+    title: string;
+    options: SelectorOption[];
+    /** 选择后的处理器名称 */
+    handler: 'theme' | 'model';
+  };
 }
 
 /**

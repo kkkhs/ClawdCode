@@ -151,12 +151,13 @@ clawdcode/
 | 10 | MCP 协议介绍、工具发现、服务器管理 | ✅ 已完成 → [文档](10-mcp-protocol.md) |
 | 11 | 双文件配置、Zustand Store、SSOT 架构 | ✅ 已完成 → [文档](11-config-state-management.md) |
 | 11b | 命令历史、命令队列、队列可视化 | ✅ 已完成 → [文档](11b-command-history-queue.md) |
-| 12a | Slash Commands：命令注册、执行、自定义命令、`/compact`、`doctor`、`update` | ✅ 已完成 → [文档](12a-slash-commands.md) |
-| 12b | Hooks 系统：11 种事件、HookExecutor、`/hooks` 命令 | ⏳ 待实现 |
-| 12c | Subagent 机制：SubagentRegistry、SubagentExecutor、内置 Agent | ⏳ 待实现 |
-| 12d | Skills 系统：渐进式披露、SkillRegistry、SkillInstaller | ⏳ 待实现 |
-| 12e | 插件系统：PluginManifest、PluginLoader、命名空间、远程安装 | ⏳ 待实现 |
-| 12f | IDE 集成：VS Code 扩展、WebSocket、IdeClient、多端展望 | ⏳ 待实现 |
+| 12a | Slash Commands：命令注册、执行、自定义命令 | ✅ 已完成 → [文档](12a-slash-commands.md) |
+| 12b | 交互式 Commands：`/compact`、`/model`、`/theme` 选择器 | ✅ 已完成 → [文档](12b-interactive-commands.md) |
+| 12c | Hooks 系统：11 种事件、HookExecutor、`/hooks` 命令 | ⏳ 待实现 |
+| 12d | Subagent 机制：SubagentRegistry、SubagentExecutor、内置 Agent | ⏳ 待实现 |
+| 12e | Skills 系统：渐进式披露、SkillRegistry、SkillInstaller | ⏳ 待实现 |
+| 12f | 插件系统：PluginManifest、PluginLoader、命名空间、远程安装 | ⏳ 待实现 |
+| 12g | IDE 集成：VS Code 扩展、WebSocket、IdeClient、多端展望 | ⏳ 待实现 |
 
 ---
 
@@ -215,8 +216,9 @@ clawdcode/
 - [x] 第 11 章：配置系统与状态管理 ✅ (Zustand Store + 5 Slices + 选择器 + UI 集成 + ClawdInterface + ContextManager 集成)
 - [x] 第 11b 章：命令历史与命令队列 ✅ (useCommandHistory + 命令队列 + 队列可视化 + 状态栏集成)
 - [x] 第 12a 章：Slash Commands 系统 ✅ (命令注册中心 + 模糊匹配 + 内置命令 + 自定义命令 + UI 集成)
-- [ ] 第 12b 章：Hooks 系统
-- [ ] 第 12c 章：Subagent 机制
+- [x] 第 12b 章：交互式 Commands ✅ (/compact 压缩 + /model 选择器 + /theme 选择器 + InteractiveSelector)
+- [ ] 第 12c 章：Hooks 系统
+- [ ] 第 12d 章：Subagent 机制
 - [ ] 第 12d 章：Skills 系统
 - [ ] 第 12e 章：插件系统
 - [ ] 第 12f 章：IDE 集成

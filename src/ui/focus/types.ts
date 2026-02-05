@@ -21,6 +21,8 @@ export enum FocusId {
   FILE_SELECTOR = 'file-selector',
   /** 帮助面板 */
   HELP_PANEL = 'help-panel',
+  /** 通用选择器 */
+  SELECTOR = 'selector',
   /** 无焦点 */
   NONE = 'none',
 }

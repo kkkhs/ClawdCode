@@ -40,6 +40,7 @@ import { InputArea } from './input/InputArea.js';
 import { LoadingIndicator } from './common/LoadingIndicator.js';
 import { ChatStatusBar } from './layout/ChatStatusBar.js';
 import { ConfirmationPrompt } from './dialog/ConfirmationPrompt.js';
+import { InteractiveSelector, type SelectorOption } from './dialog/InteractiveSelector.js';
 import { ExitMessage } from './common/ExitMessage.js';
 import { useConfirmation } from '../hooks/useConfirmation.js';
 
@@ -93,6 +94,19 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   const [initError, setInitError] = useState<string | null>(null);
   const [isExiting, setIsExiting] = useState(false);
   const [exitSessionId, setExitSessionId] = useState<string | null>(null);
+  
+  // 选择器状态
+  const [selectorState, setSelectorState] = useState<{
+    isVisible: boolean;
+    title: string;
+    options: SelectorOption[];
+    handler: 'theme' | 'model' | null;
+  }>({
+    isVisible: false,
+    title: '',
+    options: [],
+    handler: null,
+  });
 
   // ==================== Hooks ====================
   const { confirmationState, handleResponse } = useConfirmation();
@@ -181,6 +195,17 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
           model,
         });
 
+        // 4. 初始化自定义 Slash Commands
+        const { initializeCustomCommands } = await import('../../slash-commands/index.js');
+        const customCmdResult = await initializeCustomCommands(process.cwd());
+        
+        if (debug && customCmdResult.count > 0) {
+          console.log('[DEBUG] Loaded', customCmdResult.count, 'custom commands');
+        }
+        if (customCmdResult.warnings.length > 0) {
+          console.warn('[WARN] Custom commands:', customCmdResult.warnings);
+        }
+
         setIsInitializing(false);
 
         if (debug) {
@@ -204,12 +229,14 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   useEffect(() => {
     if (confirmationState.isVisible) {
       focusActions().setFocus(FocusId.CONFIRMATION_PROMPT);
+    } else if (selectorState.isVisible) {
+      focusActions().setFocus(FocusId.SELECTOR);
     } else if (activeModal === 'themeSelector') {
       focusActions().setFocus(FocusId.THEME_SELECTOR);
     } else {
       focusActions().setFocus(FocusId.MAIN_INPUT);
     }
-  }, [confirmationState.isVisible, activeModal]);
+  }, [confirmationState.isVisible, selectorState.isVisible, activeModal]);
 
   // ==================== Command History Handlers ====================
   const handleArrowUp = useCallback(() => {
@@ -227,6 +254,30 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
       inputBuffer.setCursorPosition(nextCommand.length);
     }
   }, [commandHistory, inputBuffer]);
+
+  // ==================== Selector Handlers ====================
+  const handleSelectorSelect = useCallback(async (value: string) => {
+    const { handler } = selectorState;
+    
+    if (handler === 'theme') {
+      const { themeManager } = await import('../themes/index.js');
+      themeManager.setTheme(value);
+      sessionActions().addAssistantMessage(`✓ 主题已切换为 ${value}`);
+    } else if (handler === 'model') {
+      const { configActions } = await import('../../store/index.js');
+      configActions().updateConfig({ currentModelId: value });
+      sessionActions().addAssistantMessage(`✓ 模型已切换为 ${value}`);
+    }
+    
+    setSelectorState({ isVisible: false, title: '', options: [], handler: null });
+    focusActions().setFocus(FocusId.MAIN_INPUT);
+  }, [selectorState]);
+
+  const handleSelectorCancel = useCallback(() => {
+    setSelectorState({ isVisible: false, title: '', options: [], handler: null });
+    focusActions().setFocus(FocusId.MAIN_INPUT);
+    sessionActions().addAssistantMessage('已取消选择');
+  }, []);
 
   // ==================== Core Command Processor ====================
   /**
@@ -246,7 +297,22 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
           cwd: process.cwd(),
           sessionId,
           messages,
+          contextManager: contextManagerRef.current,
+          modelName: model,
         });
+        
+        // 处理选择器类型的结果
+        if (result.type === 'selector' && result.selector) {
+          sessionActions().setThinking(false);
+          setSelectorState({
+            isVisible: true,
+            title: result.selector.title,
+            options: result.selector.options,
+            handler: result.selector.handler,
+          });
+          focusActions().setFocus(FocusId.SELECTOR);
+          return;
+        }
         
         // 显示命令结果
         if (result.content) {
@@ -440,6 +506,40 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
         details={confirmationState.details}
         onResponse={handleResponse}
       />
+    );
+  }
+
+  // 交互式选择器
+  if (selectorState.isVisible) {
+    return (
+      <Box flexDirection="column" width="100%">
+        {/* 标题 */}
+        <Box marginBottom={1}>
+          <Text bold color={theme.colors.primary}>🤖 ClawdCode - CLI Coding Agent</Text>
+        </Box>
+
+        {/* 消息区域（简化显示） */}
+        <Box flexDirection="column" marginBottom={1}>
+          {messages.slice(-3).map((msg, index) => (
+            <MessageRenderer
+              key={index}
+              content={msg.content}
+              role={msg.role}
+              terminalWidth={terminalWidth - 2}
+              showPrefix={true}
+            />
+          ))}
+        </Box>
+
+        {/* 选择器 */}
+        <InteractiveSelector
+          title={selectorState.title}
+          options={selectorState.options}
+          onSelect={handleSelectorSelect}
+          onCancel={handleSelectorCancel}
+          focusId={FocusId.SELECTOR}
+        />
+      </Box>
     );
   }
 

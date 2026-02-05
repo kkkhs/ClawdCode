@@ -103,7 +103,7 @@ export interface AppSlice extends AppState {
 
 // ========== 焦点状态 ==========
 
-export type FocusId = 'input' | 'messages' | 'confirmation' | 'modal' | 'none' | 'theme-selector';
+export type FocusId = 'input' | 'messages' | 'confirmation' | 'modal' | 'none' | 'theme-selector' | 'selector';
 
 /** FocusId 常量枚举 */
 export const FocusId = {
@@ -111,6 +111,7 @@ export const FocusId = {
   MESSAGES: 'messages' as FocusId,
   CONFIRMATION_PROMPT: 'confirmation' as FocusId,
   THEME_SELECTOR: 'theme-selector' as FocusId,
+  SELECTOR: 'selector' as FocusId,
   MODAL: 'modal' as FocusId,
   NONE: 'none' as FocusId,
 } as const;

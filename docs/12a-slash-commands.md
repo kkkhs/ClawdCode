@@ -385,6 +385,22 @@ export class CustomCommandExecutor {
 
 ## 12a.7 UI 集成
 
+### 初始化自定义命令
+
+在应用启动时调用 `initializeCustomCommands` 加载自定义命令：
+
+```typescript
+// src/ui/components/ClawdInterface.tsx
+
+// 在 Agent 初始化后
+const { initializeCustomCommands } = await import('../../slash-commands/index.js');
+const customCmdResult = await initializeCustomCommands(process.cwd());
+
+if (customCmdResult.count > 0) {
+  console.log('Loaded', customCmdResult.count, 'custom commands');
+}
+```
+
 ### 命令补全建议
 
 输入 `/` 开头时，自动显示模糊匹配的命令建议：
