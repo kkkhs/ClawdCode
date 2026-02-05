@@ -137,7 +137,6 @@ interface ThemedProps {
 const CodeBlock: React.FC<{ content: string; language?: string } & ThemedProps> = ({
   content,
   language,
-  theme,
 }) => {
   // 使用 CodeHighlighter 组件进行语法高亮
   return (
@@ -145,7 +144,6 @@ const CodeBlock: React.FC<{ content: string; language?: string } & ThemedProps> 
       content={content}
       language={language}
       showLineNumbers={true}
-      availableHeight={50}
     />
   );
 };

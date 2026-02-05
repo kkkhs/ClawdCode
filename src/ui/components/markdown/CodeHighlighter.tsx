@@ -22,8 +22,6 @@ interface CodeHighlighterProps {
   showLineNumbers?: boolean;
   /** 终端宽度 */
   terminalWidth?: number;
-  /** 可见高度（用于性能优化） */
-  availableHeight?: number;
   /** 起始行号 */
   startLine?: number;
 }
@@ -36,33 +34,18 @@ export const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
   language,
   showLineNumbers = true,
   terminalWidth = 80,
-  availableHeight = 50,
   startLine = 1,
 }) => {
   const theme = themeManager.getTheme();
   const syntaxColors = theme.colors.syntax;
 
-  // 性能优化：仅高亮可见行
-  const { lines, hiddenLinesCount, actualStartLine } = useMemo(() => {
-    let allLines = content.split('\n');
-    let hidden = 0;
-    let start = startLine;
-
-    if (availableHeight && allLines.length > availableHeight) {
-      hidden = allLines.length - availableHeight;
-      allLines = allLines.slice(hidden); // 只保留底部可见行
-      start = startLine + hidden;
-    }
-
-    return {
-      lines: allLines,
-      hiddenLinesCount: hidden,
-      actualStartLine: start,
-    };
-  }, [content, availableHeight, startLine]);
+  // 解析代码行（不再限制高度，完整显示代码块）
+  const lines = useMemo(() => {
+    return content.split('\n');
+  }, [content]);
 
   // 计算行号宽度
-  const totalLines = actualStartLine + lines.length - 1;
+  const totalLines = startLine + lines.length - 1;
   const lineNumberWidth = showLineNumbers ? String(totalLines).length + 1 : 0;
 
   return (
@@ -82,16 +65,9 @@ export const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
         </Box>
       )}
 
-      {/* 隐藏行提示 */}
-      {hiddenLinesCount > 0 && (
-        <Box>
-          <Text dimColor>... {hiddenLinesCount} lines hidden ...</Text>
-        </Box>
-      )}
-
       {/* 代码内容 */}
       {lines.map((line, index) => {
-        const lineNumber = actualStartLine + index;
+        const lineNumber = startLine + index;
         
         return (
           <Box key={index} flexDirection="row">
@@ -124,14 +100,26 @@ const HighlightedLine: React.FC<{
   syntaxColors: SyntaxColors;
 }> = React.memo(({ line, language, syntaxColors }) => {
   const highlighted = useMemo(() => {
+    // 处理空行：直接返回空格以保持行高
+    if (!line || line.trim() === '') {
+      // 保留原始空格，如果完全空则显示一个空格占位
+      return <Text color={syntaxColors.default}>{line || ' '}</Text>;
+    }
+
     try {
-      if (!language || !lowlight.registered(language)) {
-        // 自动检测语言
-        const result = lowlight.highlightAuto(line);
+      // 检查语言是否注册
+      if (language && lowlight.registered(language)) {
+        const result = lowlight.highlight(language, line);
         return renderHastNode(result, syntaxColors);
       }
 
-      const result = lowlight.highlight(language, line);
+      // 对于未注册的语言或纯文本，尝试自动检测
+      // 但对于短行或特殊字符，直接显示原文
+      if (line.length < 10 || /^[\s│┌┐└┘├┤┬┴┼─═║╔╗╚╝╠╣╦╩╬|+\-*=<>]+$/.test(line)) {
+        return <Text color={syntaxColors.default}>{line}</Text>;
+      }
+
+      const result = lowlight.highlightAuto(line);
       return renderHastNode(result, syntaxColors);
     } catch {
       return <Text color={syntaxColors.default}>{line}</Text>;
