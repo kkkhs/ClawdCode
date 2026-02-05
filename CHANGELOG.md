@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/kkkhs/ClawdCode/compare/v1.4.0...v1.5.0) (2026-02-05)
+
+
+### Features
+
+* **slash-commands:** implement Chapter 12a - Slash Commands System ([7c107bb](https://github.com/kkkhs/ClawdCode/commit/7c107bb5d36b52e2a24cfc25992edba2e8ab4416))
+
 ## [1.4.0](https://github.com/kkkhs/ClawdCode/compare/v1.3.0...v1.4.0) (2026-02-04)
 
 
