@@ -383,6 +383,163 @@ export class CustomCommandExecutor {
 }
 ```
 
+### 项目级命令示例
+
+项目可以在 `.clawdcode/commands/` 目录下定义常用命令，方便团队共享：
+
+#### /review - Code Review
+
+```markdown
+---
+description: 对当前 Git 改动进行 Code Review
+allowed-tools:
+  - Bash(git:*)
+  - Read
+---
+
+请对当前 Git 改动进行 Code Review。
+
+## 当前分支
+
+!`git branch --show-current`
+
+## 改动文件
+
+!`git diff --stat HEAD~1 2>/dev/null || git diff --stat --cached 2>/dev/null || echo "无改动"`
+
+## Diff 内容
+
+\`\`\`diff
+!`git diff HEAD~1 2>/dev/null || git diff --cached 2>/dev/null || echo "无 diff"`
+\`\`\`
+
+## Review 要求
+
+请用中文回复，包含以下内容：
+
+1. **改动概述**：简要描述这次改动做了什么
+2. **代码质量**：评估代码质量（优点和可改进的地方）
+3. **潜在问题**：指出可能的 bug、安全问题或性能问题
+4. **改进建议**：具体的代码改进建议
+```
+
+#### /commit - 自动提交
+
+```markdown
+---
+description: 自动生成 commit message 并提交
+argument-hint: [可选的额外说明]
+allowed-tools:
+  - Bash(git:*)
+  - Read
+---
+
+请根据当前 Git 改动生成 commit message 并提交。
+
+## 改动文件
+
+!`git diff --stat --cached 2>/dev/null || git diff --stat 2>/dev/null`
+
+## 最近提交风格参考
+
+!`git log -5 --oneline 2>/dev/null || echo "无历史提交"`
+
+## 额外说明
+
+$ARGUMENTS
+
+## 要求
+
+1. 先执行 `git add .` 暂存所有改动
+2. 使用英文，遵循 Conventional Commits 格式
+3. 第一行不超过 50 字符
+4. 执行 `git commit -m "message"`
+```
+
+#### /test - 运行测试
+
+```markdown
+---
+description: 运行测试并分析失败原因
+argument-hint: [测试文件或模式]
+allowed-tools:
+  - Bash(bun:*)
+  - Bash(npm:*)
+  - Read
+  - Glob
+  - Grep
+---
+
+请运行测试并分析结果。
+
+## 测试范围
+
+$ARGUMENTS
+
+## 执行要求
+
+1. **运行测试**：使用 `bun test` 或 `npm test`
+2. **分析结果**：
+   - 如果全部通过 ✅，给出简短总结
+   - 如果有失败 ❌，详细分析原因并提供修复建议
+```
+
+#### /info - 项目信息
+
+```markdown
+---
+description: 显示项目状态和信息
+---
+
+# 📊 项目状态报告
+
+## 基本信息
+
+- **项目名称**: !`cat package.json | grep '"name"' | head -1 | cut -d'"' -f4`
+- **版本**: !`cat package.json | grep '"version"' | head -1 | cut -d'"' -f4`
+- **Node 版本**: !`node -v`
+
+## Git 状态
+
+- **当前分支**: !`git branch --show-current 2>/dev/null || echo "非 Git 仓库"`
+- **最近提交**: !`git log -1 --oneline 2>/dev/null || echo "无提交"`
+- **未提交改动**: !`git status --short 2>/dev/null | wc -l | tr -d ' '` 个文件
+```
+
+#### /doc - 生成文档
+
+```markdown
+---
+description: 为指定文件生成文档注释
+argument-hint: <文件路径>
+allowed-tools:
+  - Read
+  - Write
+---
+
+请为以下文件添加文档注释。
+
+## 目标文件
+
+@$1
+
+## 要求
+
+1. 使用 JSDoc 格式
+2. 描述函数作用、参数和返回值
+3. 使用中文注释，简洁明了
+```
+
+这些项目级命令展示了自定义命令的典型用法：
+
+| 命令 | 用途 | 特点 |
+|------|------|------|
+| `/review` | Code Review | Bash 嵌入获取 Git 信息 |
+| `/commit` | 智能提交 | 参数插值 `$ARGUMENTS` |
+| `/test` | 测试分析 | 工具限制 `allowed-tools` |
+| `/info` | 项目状态 | 多个 Bash 嵌入 |
+| `/doc` | 生成文档 | 文件引用 `@$1` |
+
 ## 12a.7 UI 集成
 
 ### 初始化自定义命令
