@@ -34,9 +34,21 @@ export const MessageRenderer: React.FC<MessageRendererProps> = React.memo(
     // 解析 Markdown（缓存结果）
     const blocks = useMemo(() => parseMarkdown(content), [content]);
 
+    // 过滤连续空行，只保留一个
+    const filteredBlocks = useMemo(() => {
+      return blocks.filter((block, index) => {
+        if (block.type !== 'empty') return true;
+        // 如果前一个也是空行，跳过
+        if (index > 0 && blocks[index - 1].type === 'empty') return false;
+        // 如果是第一个块且为空行，跳过
+        if (index === 0) return false;
+        return true;
+      });
+    }, [blocks]);
+
     return (
       <Box flexDirection="column" marginBottom={1}>
-        {blocks.map((block, index) => (
+        {filteredBlocks.map((block, index) => (
           <BlockRenderer
             key={index}
             block={block}
@@ -346,42 +358,69 @@ const InlineText: React.FC<{ content: string } & ThemedProps> = ({ content, them
 /** 简单的内联格式解析器 */
 function parseInline(text: string): Array<{ type: string; text: string }> {
   const segments: Array<{ type: string; text: string }> = [];
-  let remaining = text;
   
-  // 正则匹配所有内联格式
-  const pattern = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`([^`]+)`)|(\[([^\]]+)\]\(([^)]+)\))|(~~(.+?)~~)/g;
-  let lastIndex = 0;
-  let match;
+  // 使用更精确的分步解析，避免正则冲突
+  // 优先级：代码 > 粗体 > 斜体 > 删除线 > 链接
   
-  while ((match = pattern.exec(remaining)) !== null) {
-    // 添加匹配前的普通文本
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', text: remaining.slice(lastIndex, match.index) });
+  // 定义 token 类型和正则
+  const tokenPatterns: Array<{ type: string; regex: RegExp; group: number }> = [
+    { type: 'code', regex: /`([^`]+)`/g, group: 1 },
+    { type: 'bold', regex: /\*\*([^*]+)\*\*/g, group: 1 },
+    { type: 'strikethrough', regex: /~~([^~]+)~~/g, group: 1 },
+    { type: 'italic', regex: /(?<!\*)\*([^*]+)\*(?!\*)/g, group: 1 },
+    { type: 'link', regex: /\[([^\]]+)\]\([^)]+\)/g, group: 1 },
+  ];
+
+  // 收集所有匹配
+  interface Token {
+    type: string;
+    text: string;
+    start: number;
+    end: number;
+  }
+  
+  const tokens: Token[] = [];
+  
+  for (const { type, regex, group } of tokenPatterns) {
+    let match;
+    // 重置正则状态
+    regex.lastIndex = 0;
+    while ((match = regex.exec(text)) !== null) {
+      // 检查是否与已有 token 重叠
+      const start = match.index;
+      const end = match.index + match[0].length;
+      const overlaps = tokens.some(t => 
+        (start >= t.start && start < t.end) || (end > t.start && end <= t.end)
+      );
+      
+      if (!overlaps) {
+        tokens.push({
+          type,
+          text: match[group],
+          start,
+          end,
+        });
+      }
     }
-    
-    if (match[1]) {
-      // **bold**
-      segments.push({ type: 'bold', text: match[2] });
-    } else if (match[3]) {
-      // *italic*
-      segments.push({ type: 'italic', text: match[4] });
-    } else if (match[5]) {
-      // `code`
-      segments.push({ type: 'code', text: match[6] });
-    } else if (match[7]) {
-      // [link](url)
-      segments.push({ type: 'link', text: match[8] });
-    } else if (match[10]) {
-      // ~~strikethrough~~
-      segments.push({ type: 'strikethrough', text: match[11] });
+  }
+  
+  // 按位置排序
+  tokens.sort((a, b) => a.start - b.start);
+  
+  // 构建 segments
+  let lastEnd = 0;
+  for (const token of tokens) {
+    // 添加 token 前的普通文本
+    if (token.start > lastEnd) {
+      segments.push({ type: 'text', text: text.slice(lastEnd, token.start) });
     }
-    
-    lastIndex = match.index + match[0].length;
+    segments.push({ type: token.type, text: token.text });
+    lastEnd = token.end;
   }
   
   // 添加剩余文本
-  if (lastIndex < remaining.length) {
-    segments.push({ type: 'text', text: remaining.slice(lastIndex) });
+  if (lastEnd < text.length) {
+    segments.push({ type: 'text', text: text.slice(lastEnd) });
   }
   
   // 如果没有找到任何格式，返回原文本
