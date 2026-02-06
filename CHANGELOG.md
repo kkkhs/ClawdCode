@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.6.0](https://github.com/kkkhs/ClawdCode/compare/v1.5.0...v1.6.0) (2026-02-06)
+
+
+### Features
+
+* **commands:** add project-level custom commands ([e97f506](https://github.com/kkkhs/ClawdCode/commit/e97f5065296d9050d18844d98c151b6aeab7c19e))
+* **ui:** add streaming output, theme persistence and rendering optimization ([4027f8b](https://github.com/kkkhs/ClawdCode/commit/4027f8b9d07b9e004d883461b469e5eee2ee39c4))
+
+
+### Bug Fixes
+
+* **slash-commands:** integrate CustomCommandLoader at startup ([52f9f67](https://github.com/kkkhs/ClawdCode/commit/52f9f6702b4d33bc0da55b3006edf16e894c7ca2))
+* **ui:** fix code block rendering for empty lines and ASCII art ([fda3ad4](https://github.com/kkkhs/ClawdCode/commit/fda3ad461c29670afed2f60ff22446deaf7fda36))
+* **ui:** fix inline bold format and remove extra empty lines ([595226e](https://github.com/kkkhs/ClawdCode/commit/595226e5df55f09c5ce6fb1625afc8908e730272))
+
 ## [1.5.0](https://github.com/kkkhs/ClawdCode/compare/v1.4.0...v1.5.0) (2026-02-05)
 
 
