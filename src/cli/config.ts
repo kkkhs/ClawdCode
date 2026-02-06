@@ -161,9 +161,8 @@ export const globalOptions = {
   theme: {
     alias: 't',
     type: 'string',
-    choices: ['default', 'dark', 'ocean', 'forest', 'sunset'] as const,
-    describe: 'Color theme for the UI',
-    default: 'default',
+    choices: ['default', 'light', 'dark', 'ocean', 'forest', 'sunset'] as const,
+    describe: 'Color theme for the UI (overrides saved preference)',
     group: 'UI Options:',
   },
 

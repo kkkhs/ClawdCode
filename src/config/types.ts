@@ -46,10 +46,17 @@ export const ModelConfigSchema = z.object({
 });
 
 /**
+ * 预设主题 ID 列表
+ */
+export const PRESET_THEME_IDS = ['default', 'light', 'dark', 'ocean', 'forest', 'sunset'] as const;
+export type PresetThemeId = typeof PRESET_THEME_IDS[number];
+
+/**
  * UI 配置 Schema
  */
 export const UIConfigSchema = z.object({
-  theme: z.enum(['dark', 'light']).optional(),
+  // 支持所有预设主题，也支持自定义主题名称
+  theme: z.string().optional(),
 });
 
 /**

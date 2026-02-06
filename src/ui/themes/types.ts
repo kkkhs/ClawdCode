@@ -3,6 +3,11 @@
  */
 
 /**
+ * 终端颜色模式
+ */
+export type ColorMode = 'dark' | 'light' | 'unknown';
+
+/**
  * 语法高亮颜色
  */
 export interface SyntaxColors {

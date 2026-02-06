@@ -20,6 +20,10 @@ export interface SessionMessage {
   timestamp: number;
   toolCalls?: unknown[];
   toolCallId?: string;
+  /** 思考过程内容（用于支持 DeepSeek R1 等推理模型） */
+  thinking?: string;
+  /** 是否正在流式输出中 */
+  isStreaming?: boolean;
 }
 
 export interface SessionState {
@@ -37,6 +41,14 @@ export interface SessionActions {
   addMessage: (message: SessionMessage) => void;
   addUserMessage: (content: string) => void;
   addAssistantMessage: (content: string) => void;
+  /** 开始流式助手消息（创建空消息占位） */
+  startStreamingMessage: () => string;
+  /** 追加内容到流式消息 */
+  appendToStreamingMessage: (id: string, contentDelta: string) => void;
+  /** 追加思考内容到流式消息 */
+  appendThinkingToStreamingMessage: (id: string, thinkingDelta: string) => void;
+  /** 完成流式消息 */
+  finishStreamingMessage: (id: string) => void;
   setThinking: (isThinking: boolean) => void;
   setCompacting: (isCompacting: boolean) => void;
   setCurrentCommand: (command: string | null) => void;

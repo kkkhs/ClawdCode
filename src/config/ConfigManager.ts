@@ -322,6 +322,78 @@ export class ConfigManager {
   isConfigValid(): boolean {
     return !!this.config.default?.apiKey;
   }
+
+  /**
+   * 获取主题
+   * 
+   * 优先级：用户配置 > 项目配置 > 默认
+   * 用户主动设置的主题应该优先于项目配置
+   */
+  getTheme(): string | null {
+    // 优先读取用户配置中的主题（用户主动设置的）
+    const userConfigPath = this.getUserConfigPath();
+    
+    if (fs.existsSync(userConfigPath)) {
+      try {
+        const content = fs.readFileSync(userConfigPath, 'utf-8');
+        const userConfig = JSON.parse(content);
+        
+        // 如果用户配置中有明确设置的主题，使用它
+        if (userConfig.theme) {
+          return userConfig.theme;
+        }
+        if (userConfig.ui?.theme) {
+          return userConfig.ui.theme;
+        }
+      } catch {
+        // 解析失败，返回 null
+      }
+    }
+    
+    // 没有用户设置的主题，返回 null 表示应该自动检测
+    return null;
+  }
+
+  /**
+   * 保存主题到用户配置（同步方法，确保立即保存）
+   */
+  saveTheme(themeName: string): void {
+    const configPath = this.getUserConfigPath();
+    const configDir = this.getUserConfigDir();
+
+    // 确保目录存在
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true });
+    }
+
+    // 读取现有配置或创建新配置
+    let existingConfig: Partial<Config> = {};
+    if (fs.existsSync(configPath)) {
+      try {
+        const content = fs.readFileSync(configPath, 'utf-8');
+        existingConfig = JSON.parse(content);
+      } catch {
+        // 如果解析失败，使用空配置
+      }
+    }
+
+    // 更新主题
+    existingConfig.theme = themeName;
+    if (!existingConfig.ui) {
+      existingConfig.ui = {};
+    }
+    existingConfig.ui.theme = themeName;
+
+    // 同时更新内存中的配置
+    this.config.theme = themeName;
+    if (this.config.ui) {
+      this.config.ui.theme = themeName;
+    }
+
+    // 写入文件
+    const content = JSON.stringify(existingConfig, null, 2);
+    fs.writeFileSync(configPath, content, 'utf-8');
+  }
 }
 
 // 导出单例

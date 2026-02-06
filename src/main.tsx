@@ -27,7 +27,7 @@ import { configManager } from './config/index.js';
 import { cliConfig, globalOptions, middlewareChain } from './cli/index.js';
 import { checkVersionOnStartup } from './services/index.js';
 import { getLatestSessionFile } from './context/index.js';
-import { themeManager } from './ui/themes/ThemeManager.js';
+import { themeManager } from './ui/themes/index.js';
 import { setGlobalDebug } from './utils/debug.js';
 import type { CliArguments } from './cli/types.js';
 import type { VersionCheckResult } from './services/VersionChecker.js';
@@ -204,12 +204,17 @@ async function main(): Promise<void> {
           }
         }
 
-        // 设置主题
+        // 初始化主题（从用户配置加载，或自动检测终端颜色模式）
+        themeManager.initializeFromConfig();
+        
+        // CLI 参数覆盖（如果指定了 --theme）
         if (args.theme && themeManager.hasTheme(args.theme)) {
           themeManager.setTheme(args.theme);
           if (isDebugMode) {
-            console.log('[DEBUG] Theme set to:', args.theme);
+            console.log('[DEBUG] Theme overridden by CLI to:', args.theme);
           }
+        } else if (isDebugMode) {
+          console.log('[DEBUG] Theme:', themeManager.getCurrentThemeName());
         }
 
         // 启动 Ink 应用
@@ -226,6 +231,7 @@ async function main(): Promise<void> {
           />,
           {
             exitOnCtrlC: false, // 由 useCtrlCHandler 处理退出
+            patchConsole: false, // 禁用 console patch，减少闪烁
           },
         )
       },

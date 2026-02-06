@@ -19,7 +19,7 @@ interface LoadingIndicatorProps {
 /**
  * 加载指示器
  */
-export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
+export const LoadingIndicator: React.FC<LoadingIndicatorProps> = React.memo(({
   isVisible = true,
   text = 'Thinking...',
   details,
@@ -47,6 +47,8 @@ export const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
       </Box>
     </Box>
   );
-};
+});
+
+LoadingIndicator.displayName = 'LoadingIndicator';
 
 export default LoadingIndicator;

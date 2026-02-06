@@ -19,6 +19,7 @@ import type {
   ToolCall,
   ToolResult,
   ToolDefinition,
+  StreamCallbacks,
 } from './types.js';
 import { createChatService } from '../services/ChatService.js';
 import { buildSystemPrompt } from '../prompts/builder.js';
@@ -277,13 +278,21 @@ export class Agent {
       turnsCount++;
       options?.onTurnStart?.({ turn: turnsCount, maxTurns });
 
-      // 3.4 调用 LLM
+      // 3.4 构建流式回调
+      const streamCallbacks: StreamCallbacks = {
+        onContentDelta: options?.onContentDelta,
+        onThinkingDelta: options?.onThinkingDelta,
+        onToolCallStart: options?.onToolCallStart,
+      };
+
+      // 3.5 调用 LLM（流式）
       let turnResult;
       try {
         turnResult = await this.chatService.chat(
           messages,
           tools.length > 0 ? tools : undefined,
-          options?.signal
+          options?.signal,
+          streamCallbacks
         );
       } catch (error) {
         // 处理中断
@@ -300,7 +309,7 @@ export class Agent {
         };
       }
 
-      // 3.5 通知 UI 显示内容
+      // 3.6 通知 UI 显示完整内容（非流式回调或兜底）
       if (turnResult.content && options?.onContent) {
         options.onContent(turnResult.content);
       }

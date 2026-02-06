@@ -168,6 +168,43 @@ export const useTodoStats = () =>
     })
   );
 
+// ========== 细粒度消息选择器 ==========
+
+/**
+ * 获取消息数量（避免订阅整个 messages 数组）
+ */
+export const useMessageCount = () =>
+  useClawdStore((state) => state.session.messages.length);
+
+/**
+ * 获取单条消息（通过 id）
+ */
+export const useMessageById = (id: string) =>
+  useClawdStore((state) => state.session.messages.find(m => m.id === id));
+
+/**
+ * 获取消息 ID 列表（浅比较）
+ */
+export const useMessageIds = () =>
+  useClawdStore(
+    useShallow((state) => state.session.messages.map(m => m.id))
+  );
+
+/**
+ * 判断是否有流式消息
+ */
+export const useHasStreamingMessage = () =>
+  useClawdStore((state) => state.session.messages.some(m => m.isStreaming));
+
+/**
+ * 获取流式消息 ID
+ */
+export const useStreamingMessageId = () =>
+  useClawdStore((state) => {
+    const streaming = state.session.messages.find(m => m.isStreaming);
+    return streaming?.id ?? null;
+  });
+
 // ========== 组合选择器（使用 useShallow）==========
 
 /**

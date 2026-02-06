@@ -60,6 +60,12 @@ export {
   useIsInputDisabled,
   useIsBusy,
   useTodoStats,
+  // 细粒度消息选择器
+  useMessageCount,
+  useMessageById,
+  useMessageIds,
+  useHasStreamingMessage,
+  useStreamingMessageId,
   // 组合选择器
   useSessionState,
   useAppState,

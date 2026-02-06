@@ -8,10 +8,9 @@
 
 import { useCallback, useRef } from 'react';
 import { useApp, useInput } from 'ink';
+import { getState } from '../../store/index.js';
 
 interface CtrlCHandlerOptions {
-  /** 是否有正在运行的任务 */
-  hasRunningTask: boolean;
   /** 中断回调 */
   onInterrupt?: () => void;
   /** 
@@ -32,9 +31,11 @@ interface CtrlCHandlerResult {
 
 /**
  * Ctrl+C 处理 Hook
+ * 
+ * 自己通过 getState() 获取 isThinking 状态，避免订阅导致的重新渲染
  */
 export const useCtrlCHandler = (options: CtrlCHandlerOptions): CtrlCHandlerResult => {
-  const { hasRunningTask, onInterrupt, onBeforeExit, forceExitDelay = 2000 } = options;
+  const { onInterrupt, onBeforeExit, forceExitDelay = 2000 } = options;
   const { exit } = useApp();
   
   const lastCtrlCTime = useRef<number>(0);
@@ -58,6 +59,9 @@ export const useCtrlCHandler = (options: CtrlCHandlerOptions): CtrlCHandlerResul
     const now = Date.now();
     const timeSinceLastCtrlC = now - lastCtrlCTime.current;
     
+    // 使用 getState() 获取最新状态，避免订阅
+    const hasRunningTask = getState().session.isThinking;
+    
     if (hasRunningTask) {
       if (forceExitPending.current && timeSinceLastCtrlC < forceExitDelay) {
         // 第二次 Ctrl+C：强制退出
@@ -76,7 +80,7 @@ export const useCtrlCHandler = (options: CtrlCHandlerOptions): CtrlCHandlerResul
       // 没有任务，直接退出
       doExit();
     }
-  }, [hasRunningTask, onInterrupt, forceExitDelay, doExit]);
+  }, [onInterrupt, forceExitDelay, doExit]);
 
   // 监听 Ctrl+C 输入
   useInput((input, key) => {

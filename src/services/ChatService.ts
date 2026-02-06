@@ -2,6 +2,7 @@
  * ChatService - LLM 通信服务
  * 
  * 封装与 LLM API 的通信，支持 OpenAI 兼容的所有服务
+ * 支持流式输出和思考过程（reasoning/thinking）
  */
 
 import OpenAI from 'openai';
@@ -11,6 +12,7 @@ import type {
   ChatResponse,
   IChatService,
   ToolCall,
+  StreamCallbacks,
 } from '../agent/types.js';
 
 // ========== 配置类型 ==========
@@ -27,6 +29,7 @@ export interface ChatServiceConfig {
 
 /**
  * OpenAI 兼容的 ChatService 实现
+ * 支持流式输出和思考过程
  */
 export class OpenAIChatService implements IChatService {
   private client: OpenAI;
@@ -43,12 +46,13 @@ export class OpenAIChatService implements IChatService {
   }
 
   /**
-   * 发送聊天请求
+   * 发送聊天请求（流式）
    */
   async chat(
     messages: Message[],
     tools?: ToolDefinition[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    streamCallbacks?: StreamCallbacks
   ): Promise<ChatResponse> {
     try {
       // 转换消息格式
@@ -58,6 +62,7 @@ export class OpenAIChatService implements IChatService {
       const requestParams: OpenAI.ChatCompletionCreateParams = {
         model: this.model,
         messages: openaiMessages,
+        stream: true,  // 启用流式输出
       };
 
       // 添加工具定义
@@ -68,38 +73,100 @@ export class OpenAIChatService implements IChatService {
         }));
       }
 
-      // 发送请求
-      const response = await this.client.chat.completions.create(
+      // 发送流式请求
+      const stream = await this.client.chat.completions.create(
         requestParams,
         { signal }
       );
 
-      // 解析响应
-      const choice = response.choices[0];
-      if (!choice) {
-        throw new Error('No response from LLM');
-      }
+      // 收集完整响应
+      let content = '';
+      let reasoningContent = '';
+      const toolCalls: Map<number, { id: string; name: string; arguments: string }> = new Map();
+      let usage: ChatResponse['usage'] | undefined;
 
-      const assistantMessage = choice.message;
+      // 处理流式响应
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta;
+        if (!delta) continue;
+
+        // 处理内容增量
+        if (delta.content) {
+          content += delta.content;
+          streamCallbacks?.onContentDelta?.(delta.content);
+        }
+
+        // 处理思考内容增量（DeepSeek R1 / Claude 等模型）
+        // 注意：不同模型的字段可能不同
+        const reasoning = (delta as Record<string, unknown>).reasoning_content 
+          || (delta as Record<string, unknown>).thinking
+          || (delta as Record<string, unknown>).reasoning;
+        if (reasoning && typeof reasoning === 'string') {
+          reasoningContent += reasoning;
+          streamCallbacks?.onThinkingDelta?.(reasoning);
+        }
+
+        // 处理工具调用增量
+        if (delta.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            const index = tc.index;
+            
+            if (!toolCalls.has(index)) {
+              // 新的工具调用
+              toolCalls.set(index, {
+                id: tc.id || '',
+                name: tc.function?.name || '',
+                arguments: tc.function?.arguments || '',
+              });
+              
+              if (tc.id && tc.function?.name) {
+                streamCallbacks?.onToolCallStart?.({
+                  id: tc.id,
+                  type: 'function',
+                  function: {
+                    name: tc.function.name,
+                    arguments: '',
+                  },
+                });
+              }
+            } else {
+              // 更新现有工具调用
+              const existing = toolCalls.get(index)!;
+              if (tc.id) existing.id = tc.id;
+              if (tc.function?.name) existing.name = tc.function.name;
+              if (tc.function?.arguments) {
+                existing.arguments += tc.function.arguments;
+                streamCallbacks?.onToolCallDelta?.(existing.id, tc.function.arguments);
+              }
+            }
+          }
+        }
+
+        // 处理 usage（通常在最后一个 chunk）
+        if (chunk.usage) {
+          usage = {
+            promptTokens: chunk.usage.prompt_tokens,
+            completionTokens: chunk.usage.completion_tokens,
+            totalTokens: chunk.usage.total_tokens,
+          };
+        }
+      }
 
       // 构建返回结果
       const result: ChatResponse = {
-        content: assistantMessage.content || '',
-        usage: response.usage ? {
-          promptTokens: response.usage.prompt_tokens,
-          completionTokens: response.usage.completion_tokens,
-          totalTokens: response.usage.total_tokens,
-        } : undefined,
+        content,
+        reasoningContent: reasoningContent || undefined,
+        usage,
       };
 
       // 处理工具调用
-      if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-        result.toolCalls = assistantMessage.tool_calls.map(tc => ({
+      if (toolCalls.size > 0) {
+        result.toolCalls = Array.from(toolCalls.values()).map(tc => ({
           id: tc.id,
           type: 'function' as const,
           function: {
-            name: tc.function.name,
-            arguments: tc.function.arguments,
+            name: tc.name,
+            arguments: tc.arguments,
           },
         }));
       }

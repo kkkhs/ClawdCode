@@ -115,11 +115,20 @@ export interface LoopOptions {
   /** 轮次开始回调 */
   onTurnStart?: (info: { turn: number; maxTurns: number }) => void;
   
-  /** 内容回调（流式或完整） */
+  /** 内容回调（完整内容，用于非流式场景） */
   onContent?: (content: string) => void;
   
-  /** 思考内容回调（推理模型） */
+  /** 内容增量回调（流式） */
+  onContentDelta?: (delta: string) => void;
+  
+  /** 思考内容回调（完整内容） */
   onThinking?: (content: string) => void;
+  
+  /** 思考内容增量回调（流式） */
+  onThinkingDelta?: (delta: string) => void;
+  
+  /** 工具调用开始回调 */
+  onToolCallStart?: (toolCall: Partial<ToolCall>) => void;
   
   /** 工具结果回调 */
   onToolResult?: (toolCall: ToolCall, result: ToolResult) => void;
@@ -262,12 +271,27 @@ export interface ChatResponse {
 }
 
 /**
+ * 流式回调选项
+ */
+export interface StreamCallbacks {
+  /** 内容增量回调 */
+  onContentDelta?: (delta: string) => void;
+  /** 思考内容增量回调 */
+  onThinkingDelta?: (delta: string) => void;
+  /** 工具调用开始回调 */
+  onToolCallStart?: (toolCall: Partial<ToolCall>) => void;
+  /** 工具调用参数增量回调 */
+  onToolCallDelta?: (toolCallId: string, argumentsDelta: string) => void;
+}
+
+/**
  * ChatService 接口
  */
 export interface IChatService {
   chat(
     messages: Message[],
     tools?: ToolDefinition[],
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    streamCallbacks?: StreamCallbacks
   ): Promise<ChatResponse>;
 }

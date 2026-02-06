@@ -2,11 +2,77 @@
  * 主题管理器
  * 
  * 管理主题的注册、切换和获取
+ * 支持自动检测终端颜色模式
  */
 
-import type { Theme, ThemePreset, RoleStyle } from './types.js';
+import { execSync } from 'node:child_process';
+import type { Theme, ThemePreset, RoleStyle, ColorMode } from './types.js';
 import { defaultTheme } from './defaultTheme.js';
 import { darkTheme } from './darkTheme.js';
+import { lightTheme } from './lightTheme.js';
+import { configManager } from '../../config/ConfigManager.js';
+
+/**
+ * 检测终端/系统的颜色模式
+ * 
+ * 检测顺序：
+ * 1. macOS 系统级暗色模式
+ * 2. COLORFGBG 环境变量（一些终端会设置）
+ * 3. 默认返回 unknown
+ */
+function detectColorMode(): ColorMode {
+  // 1. macOS 系统级检测
+  if (process.platform === 'darwin') {
+    try {
+      const result = execSync('defaults read -g AppleInterfaceStyle 2>/dev/null', {
+        encoding: 'utf-8',
+        timeout: 1000,
+      }).trim();
+      if (result === 'Dark') {
+        return 'dark';
+      }
+    } catch {
+      // 如果命令失败或返回空，说明是亮色模式
+      return 'light';
+    }
+  }
+
+  // 2. 检查 COLORFGBG 环境变量
+  // 格式: "foreground;background" 如 "15;0" (白字黑底) 或 "0;15" (黑字白底)
+  const colorFgBg = process.env.COLORFGBG;
+  if (colorFgBg) {
+    const parts = colorFgBg.split(';');
+    if (parts.length >= 2) {
+      const bg = parseInt(parts[parts.length - 1], 10);
+      // 背景色 0-7 通常是暗色，8-15 通常是亮色
+      // 0=黑, 7=白(暗), 8=亮黑(灰), 15=亮白
+      if (!isNaN(bg)) {
+        if (bg === 0 || bg <= 6) {
+          return 'dark';
+        } else if (bg === 7 || bg >= 8) {
+          return 'light';
+        }
+      }
+    }
+  }
+
+  // 3. 检查常见终端的默认模式
+  const termProgram = process.env.TERM_PROGRAM?.toLowerCase();
+  if (termProgram) {
+    // VS Code 集成终端通常跟随编辑器主题
+    if (termProgram === 'vscode') {
+      // VS Code 的 VSCODE_THEME_KIND 变量
+      const themeKind = process.env.VSCODE_THEME_KIND;
+      if (themeKind === 'vscode-dark' || themeKind === 'vscode-high-contrast') {
+        return 'dark';
+      } else if (themeKind === 'vscode-light' || themeKind === 'vscode-high-contrast-light') {
+        return 'light';
+      }
+    }
+  }
+
+  return 'unknown';
+}
 
 /**
  * 预设主题列表
@@ -15,13 +81,19 @@ const presetThemes: ThemePreset[] = [
   {
     id: 'default',
     name: 'Default',
-    description: 'Light theme with blue accents',
+    description: 'Balanced theme (works on most terminals)',
     theme: defaultTheme,
+  },
+  {
+    id: 'light',
+    name: 'Light',
+    description: 'Optimized for light/white terminal backgrounds',
+    theme: lightTheme,
   },
   {
     id: 'dark',
     name: 'Dark',
-    description: 'Dark theme for low-light environments',
+    description: 'Dark theme for dark terminal backgrounds',
     theme: darkTheme,
   },
   {
@@ -92,6 +164,7 @@ const presetThemes: ThemePreset[] = [
 export class ThemeManager {
   private currentTheme: Theme = defaultTheme;
   private themes: Map<string, Theme> = new Map();
+  private initialized: boolean = false;
 
   constructor() {
     // 注册预设主题
@@ -101,12 +174,66 @@ export class ThemeManager {
   }
 
   /**
-   * 设置当前主题
+   * 从配置中初始化主题
+   * 
+   * 优先级：
+   * 1. 用户保存的主题（用户配置文件中）
+   * 2. 自动检测终端颜色模式，选择合适的主题
+   * 3. 使用默认主题
    */
-  setTheme(themeName: string): void {
+  initializeFromConfig(): void {
+    if (this.initialized) return;
+    
+    try {
+      const savedTheme = configManager.getTheme();
+      
+      // 如果用户之前保存过主题，使用保存的主题
+      if (savedTheme && this.themes.has(savedTheme)) {
+        this.currentTheme = this.themes.get(savedTheme)!;
+        this.initialized = true;
+        return;
+      }
+      
+      // 没有用户保存的主题，自动检测终端颜色模式
+      const colorMode = detectColorMode();
+      
+      if (colorMode === 'dark') {
+        this.currentTheme = this.themes.get('dark')!;
+      } else if (colorMode === 'light') {
+        this.currentTheme = this.themes.get('light')!;
+      }
+      // colorMode === 'unknown' 时保持默认主题
+      
+      this.initialized = true;
+    } catch {
+      // 配置读取失败时使用默认主题
+      this.initialized = true;
+    }
+  }
+  
+  /**
+   * 获取检测到的终端颜色模式（供调试使用）
+   */
+  getDetectedColorMode(): ColorMode {
+    return detectColorMode();
+  }
+
+  /**
+   * 设置当前主题（同时保存到配置）
+   */
+  setTheme(themeName: string, persist: boolean = true): void {
     const theme = this.themes.get(themeName);
     if (theme) {
       this.currentTheme = theme;
+      
+      // 同步保存到配置文件，确保立即生效
+      if (persist) {
+        try {
+          configManager.saveTheme(themeName);
+        } catch {
+          // 保存失败时静默忽略
+        }
+      }
     } else {
       throw new Error(`Theme '${themeName}' not found`);
     }

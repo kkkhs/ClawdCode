@@ -8,9 +8,67 @@
  * - 协调各个 UI 区域的渲染
  */
 
-import React, { useEffect, useCallback, useRef, useState } from 'react';
+import React, { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { Box, Text } from 'ink';
 import Spinner from 'ink-spinner';
+
+// ========== 节流工具 ==========
+
+/**
+ * 创建节流的流式更新器
+ * 累积 delta 内容，定期批量更新 UI，避免频繁重绘
+ */
+function createThrottledStreamUpdater(
+  updateContent: (delta: string) => void,
+  updateThinking: (delta: string) => void,
+  intervalMs: number = 50
+) {
+  let contentBuffer = '';
+  let thinkingBuffer = '';
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const flush = () => {
+    if (contentBuffer) {
+      updateContent(contentBuffer);
+      contentBuffer = '';
+    }
+    if (thinkingBuffer) {
+      updateThinking(thinkingBuffer);
+      thinkingBuffer = '';
+    }
+    timer = null;
+  };
+
+  return {
+    appendContent: (delta: string) => {
+      contentBuffer += delta;
+      if (!timer) {
+        timer = setTimeout(flush, intervalMs);
+      }
+    },
+    appendThinking: (delta: string) => {
+      thinkingBuffer += delta;
+      if (!timer) {
+        timer = setTimeout(flush, intervalMs);
+      }
+    },
+    flush: () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      flush();
+    },
+    clear: () => {
+      contentBuffer = '';
+      thinkingBuffer = '';
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    },
+  };
+}
 
 import { Agent } from '../../agent/Agent.js';
 import type { Message, ChatContext } from '../../agent/types.js';
@@ -19,16 +77,21 @@ import type { Message, ChatContext } from '../../agent/types.js';
 import {
   useInitializationStatus,
   useActiveModal,
-  useIsThinking,
-  useMessages,
   useSessionId,
+  // 以下 hooks 仅在子组件中使用
+  useHasStreamingMessage,
+  useMessages,
+  useIsThinking,
+  usePendingCommands,
   useTokenUsage,
+  // Actions
   sessionActions,
   focusActions,
   commandActions,
   FocusId,
   useCurrentFocus,
-  usePendingCommands,
+  getState,
+  subscribe,
 } from '../../store/index.js';
 
 // Context
@@ -39,6 +102,7 @@ import { MessageRenderer } from './markdown/MessageRenderer.js';
 import { InputArea } from './input/InputArea.js';
 import { LoadingIndicator } from './common/LoadingIndicator.js';
 import { ChatStatusBar } from './layout/ChatStatusBar.js';
+import { MessageList } from './layout/MessageList.js';
 import { ConfirmationPrompt } from './dialog/ConfirmationPrompt.js';
 import { InteractiveSelector, type SelectorOption } from './dialog/InteractiveSelector.js';
 import { ExitMessage } from './common/ExitMessage.js';
@@ -47,11 +111,9 @@ import { useConfirmation } from '../hooks/useConfirmation.js';
 // Hooks
 import { useTerminalWidth } from '../hooks/useTerminalWidth.js';
 import { useCtrlCHandler } from '../hooks/useCtrlCHandler.js';
-import { useInputBuffer } from '../hooks/useInputBuffer.js';
-import { useCommandHistory } from '../hooks/useCommandHistory.js';
 
 // Theme
-import { themeManager } from '../themes/ThemeManager.js';
+import { themeManager } from '../themes/index.js';
 
 // ========== Types ==========
 
@@ -64,6 +126,79 @@ export interface ClawdInterfaceProps {
   resumeSessionId?: string;
 }
 
+// ========== Memoized Sub-Components ==========
+
+/**
+ * 队列命令预览组件 - 自己订阅状态
+ */
+const QueuedCommands: React.FC = React.memo(() => {
+  const pendingCommands = usePendingCommands();
+  const theme = themeManager.getTheme();
+  
+  if (pendingCommands.length === 0) return null;
+  
+  return (
+    <Box flexDirection="column" marginTop={1}>
+      <Text color={theme.colors.text.muted} dimColor>
+        ── Queued ({pendingCommands.length}) ──
+      </Text>
+      {pendingCommands.map((cmd, index) => (
+        <Box key={index} marginLeft={2}>
+          <Text color={theme.colors.text.muted} dimColor>
+            {index + 1}. {cmd.length > 60 ? cmd.slice(0, 57) + '...' : cmd}
+          </Text>
+        </Box>
+      ))}
+    </Box>
+  );
+});
+
+QueuedCommands.displayName = 'QueuedCommands';
+
+/**
+ * 加载指示器包装组件 - 自己订阅状态
+ */
+const ThinkingIndicator: React.FC = React.memo(() => {
+  const isThinking = useIsThinking();
+  const hasStreamingMessage = useHasStreamingMessage();
+  
+  if (!isThinking || hasStreamingMessage) return null;
+  
+  return <LoadingIndicator />;
+});
+
+ThinkingIndicator.displayName = 'ThinkingIndicator';
+
+/**
+ * 最近消息预览组件（用于选择器模式）
+ * 独立订阅消息状态，避免影响主界面渲染
+ */
+interface RecentMessagesPreviewProps {
+  terminalWidth: number;
+  count?: number;
+}
+
+const RecentMessagesPreview: React.FC<RecentMessagesPreviewProps> = React.memo(({ terminalWidth, count = 3 }) => {
+  const messages = useMessages();
+  const recentMessages = messages.slice(-count);
+  
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      {recentMessages.map((msg, index) => (
+        <MessageRenderer
+          key={msg.id || index}
+          content={msg.content}
+          role={msg.role}
+          terminalWidth={terminalWidth}
+          showPrefix={true}
+        />
+      ))}
+    </Box>
+  );
+});
+
+RecentMessagesPreview.displayName = 'RecentMessagesPreview';
+
 // ========== Component ==========
 
 export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
@@ -75,14 +210,14 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   resumeSessionId,
 }) => {
   // ==================== Store State ====================
+  // 只保留真正需要的订阅，其他通过 getState() 按需获取
   const initializationStatus = useInitializationStatus();
   const activeModal = useActiveModal();
-  const isThinking = useIsThinking();
-  const messages = useMessages();
-  const sessionId = useSessionId();
-  const tokenUsage = useTokenUsage();
-  const currentFocus = useCurrentFocus();
-  const pendingCommands = usePendingCommands();
+  const sessionId = useSessionId(); // 用于 slash 命令上下文
+  // currentFocus 通过 getState() 按需获取
+  
+  // 获取消息的函数（不订阅状态，避免重新渲染）
+  const getMessages = useCallback(() => getState().session.messages, []);
 
   // ==================== Local State & Refs ====================
   const terminalWidth = useTerminalWidth();
@@ -110,21 +245,19 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
 
   // ==================== Hooks ====================
   const { confirmationState, handleResponse } = useConfirmation();
-  const inputBuffer = useInputBuffer('', 0);
-  const commandHistory = useCommandHistory();
 
-  // Ctrl+C handler
+  // Ctrl+C handler - 自己通过 getState() 获取状态
   useCtrlCHandler({
-    hasRunningTask: isThinking,
     onInterrupt: () => {
       // TODO: Abort current operation
       sessionActions().setThinking(false);
     },
     onBeforeExit: () => {
-      // 获取当前会话 ID
-      const currentSessionId = contextManagerRef.current?.getCurrentSessionId() || sessionId;
+      // 使用 getState() 获取最新状态
+      const currentMessageCount = getState().session.messages.length;
+      const currentSessionId = contextManagerRef.current?.getCurrentSessionId() || getState().session.sessionId;
       
-      if (currentSessionId && messages.length > 0) {
+      if (currentSessionId && currentMessageCount > 0) {
         // 设置退出状态，显示 ExitMessage
         setExitSessionId(currentSessionId);
         setIsExiting(true);
@@ -238,22 +371,6 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
     }
   }, [confirmationState.isVisible, selectorState.isVisible, activeModal]);
 
-  // ==================== Command History Handlers ====================
-  const handleArrowUp = useCallback(() => {
-    const prevCommand = commandHistory.getPreviousCommand();
-    if (prevCommand !== null) {
-      inputBuffer.setValue(prevCommand);
-      inputBuffer.setCursorPosition(prevCommand.length);
-    }
-  }, [commandHistory, inputBuffer]);
-
-  const handleArrowDown = useCallback(() => {
-    const nextCommand = commandHistory.getNextCommand();
-    if (nextCommand !== null) {
-      inputBuffer.setValue(nextCommand);
-      inputBuffer.setCursorPosition(nextCommand.length);
-    }
-  }, [commandHistory, inputBuffer]);
 
   // ==================== Selector Handlers ====================
   const handleSelectorSelect = useCallback(async (value: string) => {
@@ -296,7 +413,7 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
         const result = await executeSlashCommand(value, {
           cwd: process.cwd(),
           sessionId,
-          messages,
+          messages: getMessages(),
           contextManager: contextManagerRef.current,
           modelName: model,
         });
@@ -353,6 +470,16 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
       console.log('[DEBUG] Current token count:', ctxManager.getTokenCount());
     }
 
+    // 创建流式消息占位
+    const streamingMessageId = sessionActions().startStreamingMessage();
+
+    // 创建节流更新器（每 50ms 批量更新一次，避免频繁重绘）
+    const streamUpdater = createThrottledStreamUpdater(
+      (delta) => sessionActions().appendToStreamingMessage(streamingMessageId, delta),
+      (delta) => sessionActions().appendThinkingToStreamingMessage(streamingMessageId, delta),
+      50 // 50ms 节流间隔
+    );
+
     try {
       // 从 ContextManager 获取消息构建 ChatContext
       const contextMessages = ctxManager.getMessages();
@@ -373,11 +500,23 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
         })),
       };
 
-      // 调用 Agent
-      const result = await agentRef.current.chat(value, chatContext);
+      // 调用 Agent（带节流的流式回调）
+      const result = await agentRef.current.chat(value, chatContext, {
+        // 流式内容回调（节流）
+        onContentDelta: (delta) => {
+          streamUpdater.appendContent(delta);
+        },
+        // 流式思考内容回调（节流）
+        onThinkingDelta: (delta) => {
+          streamUpdater.appendThinking(delta);
+        },
+      });
 
-      // 添加助手消息到 UI Store
-      sessionActions().addAssistantMessage(result);
+      // 刷新剩余的缓冲内容
+      streamUpdater.flush();
+
+      // 完成流式消息
+      sessionActions().finishStreamingMessage(streamingMessageId);
 
       // 添加助手消息到 ContextManager（自动持久化）
       await ctxManager.addMessage('assistant', result);
@@ -389,10 +528,11 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
       // 更新 ContextManager 的 token 计数
       ctxManager.updateTokenCount(totalTokens);
       
-      // 更新 UI Store 的 token 统计
+      // 更新 UI Store 的 token 统计（使用 getState() 获取当前值）
+      const currentTokenUsage = getState().session.tokenUsage;
       sessionActions().updateTokenUsage({
-        inputTokens: tokenUsage.inputTokens + inputTokens,
-        outputTokens: tokenUsage.outputTokens + outputTokens,
+        inputTokens: currentTokenUsage.inputTokens + inputTokens,
+        outputTokens: currentTokenUsage.outputTokens + outputTokens,
       });
 
       if (debug) {
@@ -401,15 +541,20 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
       }
 
     } catch (error) {
+      // 清理节流缓冲
+      streamUpdater.clear();
+      
       const errorContent = `Error: ${(error as Error).message}`;
-      sessionActions().addAssistantMessage(errorContent);
+      // 更新流式消息为错误内容
+      sessionActions().appendToStreamingMessage(streamingMessageId, errorContent);
+      sessionActions().finishStreamingMessage(streamingMessageId);
       
       // 错误也记录到 ContextManager
       await ctxManager.addMessage('assistant', errorContent);
     } finally {
       sessionActions().setThinking(false);
     }
-  }, [debug, model, sessionId, messages, tokenUsage.inputTokens, tokenUsage.outputTokens]);
+  }, [debug, model, sessionId, getMessages]);
 
   // ==================== Queue Processor ====================
   /**
@@ -426,34 +571,48 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   }, [processCommand, debug]);
 
   // 当 isThinking 变为 false 时，检查队列并处理下一个命令
+  // 使用 store subscribe 而不是 useEffect + hooks，避免状态订阅导致的重新渲染
   useEffect(() => {
-    if (!isThinking && pendingCommands.length > 0) {
-      processQueue();
-    }
-  }, [isThinking, pendingCommands.length, processQueue]);
+    let prevIsThinking = getState().session.isThinking;
+    
+    const unsubscribe = subscribe((state) => {
+      const currentIsThinking = state.session.isThinking;
+      const hasPending = state.command.pendingCommands.length > 0;
+      
+      // 检测 isThinking 从 true 变为 false
+      if (prevIsThinking && !currentIsThinking && hasPending) {
+        processQueue();
+      }
+      
+      prevIsThinking = currentIsThinking;
+    });
+    
+    return unsubscribe;
+  }, [processQueue]);
 
   // ==================== Command Handler ====================
   const handleSubmit = useCallback(async (value: string) => {
     if (!value.trim()) return;
 
-    // 添加到命令历史
-    commandHistory.addToHistory(value);
+    // 命令历史由 InputArea 自己管理，无需在此处理
 
-    // 清空输入
-    inputBuffer.clear();
+    // 使用 getState() 获取最新状态，避免订阅导致的重新渲染
+    const currentState = getState();
+    const currentIsThinking = currentState.session.isThinking;
+    const currentPendingCount = currentState.command.pendingCommands.length;
 
     // 如果正在处理中，将命令加入队列
-    if (isThinking) {
+    if (currentIsThinking) {
       commandActions().enqueueCommand(value);
       if (debug) {
-        console.log('[DEBUG] Command queued:', value, 'Queue size:', pendingCommands.length + 1);
+        console.log('[DEBUG] Command queued:', value, 'Queue size:', currentPendingCount + 1);
       }
       return;
     }
 
     // 否则直接处理
     await processCommand(value);
-  }, [inputBuffer, commandHistory, isThinking, processCommand, debug, pendingCommands.length]);
+  }, [processCommand, debug]);
 
   // ==================== Initial Message ====================
   useEffect(() => {
@@ -523,17 +682,7 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
         </Box>
 
         {/* 消息区域（简化显示） */}
-        <Box flexDirection="column" marginBottom={1}>
-          {messages.slice(-3).map((msg, index) => (
-            <MessageRenderer
-              key={index}
-              content={msg.content}
-              role={msg.role}
-              terminalWidth={terminalWidth - 2}
-              showPrefix={true}
-            />
-          ))}
-        </Box>
+        <RecentMessagesPreview terminalWidth={terminalWidth - 2} count={3} />
 
         {/* 选择器 */}
         <InteractiveSelector
@@ -563,70 +712,24 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
         <Text color={theme.colors.text.muted} dimColor>│  AI-powered coding agent · /help for commands</Text>
       </Box>
 
-      {/* 消息区域 */}
+      {/* 消息区域 - 使用优化的 MessageList 组件 */}
       <Box flexDirection="column" marginBottom={1}>
-        {messages.map((msg, index) => (
-          <MessageRenderer
-            key={index}
-            content={msg.content}
-            role={msg.role}
-            terminalWidth={terminalWidth - 2}
-            showPrefix={true}
-          />
-        ))}
+        <MessageList terminalWidth={terminalWidth - 2} />
 
-        {/* 加载指示器 */}
-        {isThinking && <LoadingIndicator />}
+        {/* 加载指示器 - 自己订阅状态 */}
+        <ThinkingIndicator />
 
-        {/* 队列中的命令预览 */}
-        {pendingCommands.length > 0 && (
-          <Box flexDirection="column" marginTop={1}>
-            <Text color={theme.colors.text.muted} dimColor>
-              ── Queued ({pendingCommands.length}) ──
-            </Text>
-            {pendingCommands.map((cmd, index) => (
-              <Box key={index} marginLeft={2}>
-                <Text color={theme.colors.text.muted} dimColor>
-                  {index + 1}. {cmd.length > 60 ? cmd.slice(0, 57) + '...' : cmd}
-                </Text>
-              </Box>
-            ))}
-          </Box>
-        )}
+        {/* 队列中的命令预览 - 自己订阅状态 */}
+        <QueuedCommands />
       </Box>
 
-      {/* 输入区域 - 始终可见，处理中时显示队列提示 */}
+      {/* 输入区域 - 完全自管理状态（包括命令历史） */}
       <InputArea
-        input={inputBuffer.value}
-        cursorPosition={inputBuffer.cursorPosition}
-        onChange={inputBuffer.setValue}
-        onChangeCursorPosition={inputBuffer.setCursorPosition}
         onSubmit={handleSubmit}
-        onArrowUp={handleArrowUp}
-        onArrowDown={handleArrowDown}
-        isProcessing={isThinking}
-        placeholder={
-          isThinking
-            ? pendingCommands.length > 0
-              ? `Queued: ${pendingCommands.length} command(s). Type to add more...`
-              : 'Processing... Type to queue next command'
-            : 'Type a message... (Ctrl+C to exit)'
-        }
       />
 
-      {/* 状态栏 */}
-      <ChatStatusBar
-        model={model}
-        sessionId={sessionId}
-        messageCount={messages.length}
-        queuedCommands={pendingCommands.length}
-        themeName={theme.name}
-        tokenUsage={{
-          input: tokenUsage.inputTokens,
-          output: tokenUsage.outputTokens,
-          total: tokenUsage.inputTokens + tokenUsage.outputTokens,
-        }}
-      />
+      {/* 状态栏 - 自己订阅状态 */}
+      <ChatStatusBar model={model} />
 
       {/* 退出提示（追加在状态栏下方） */}
       {isExiting && exitSessionId && (

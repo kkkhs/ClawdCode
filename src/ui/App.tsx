@@ -15,7 +15,7 @@ import Spinner from 'ink-spinner';
 import { ErrorBoundary } from './components/common/ErrorBoundary.js';
 import { UpdatePrompt } from './components/dialog/UpdatePrompt.js';
 import { ClawdInterface } from './components/ClawdInterface.js';
-import { themeManager } from './themes/ThemeManager.js';
+import { themeManager } from './themes/index.js';
 import type { PermissionMode } from '../cli/types.js';
 import type { VersionCheckResult } from '../services/VersionChecker.js';
 import type { RuntimeConfig, ClawdConfig } from '../config/types.js';
@@ -139,11 +139,8 @@ const AppWrapper: React.FC<AppProps> = (props) => {
       // 4. 初始化 Store 状态
       initializeStoreState(mergedConfig);
       
-      // 5. 加载主题
-      const savedTheme = mergedConfig.theme;
-      if (savedTheme && themeManager.hasTheme(savedTheme)) {
-        themeManager.setTheme(savedTheme);
-      }
+      // 注意：主题已在 main.tsx 的 initializeFromConfig() 中初始化
+      // 用户选择的主题优先级高于项目配置，所以这里不再重复设置
       
       if (props.debug) {
         console.log('[DEBUG] Store initialized successfully');

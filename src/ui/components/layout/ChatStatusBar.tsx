@@ -1,30 +1,22 @@
 /**
  * ChatStatusBar - 聊天状态栏组件
  * 
- * 简约极客风格的状态栏，显示核心会话信息
+ * 简约极客风格的状态栏，自己订阅状态避免父组件重渲染影响
  */
 
 import React from 'react';
 import { Box, Text } from 'ink';
 import { themeManager } from '../../themes/index.js';
+import {
+  useSessionId,
+  useTokenUsage,
+  useMessageCount,
+  usePendingCommands,
+} from '../../../store/index.js';
 
 interface ChatStatusBarProps {
   /** 当前模型 */
   model?: string;
-  /** 会话 ID */
-  sessionId?: string;
-  /** Token 使用量 */
-  tokenUsage?: {
-    input: number;
-    output: number;
-    total: number;
-  };
-  /** 消息数量 */
-  messageCount?: number;
-  /** 队列中的命令数量 */
-  queuedCommands?: number;
-  /** 当前主题 */
-  themeName?: string;
   /** 是否显示 */
   isVisible?: boolean;
 }
@@ -43,18 +35,20 @@ function formatTokens(count: number): string {
 }
 
 /**
- * 聊天状态栏 - 极简风格
+ * 聊天状态栏 - 自己订阅状态
  */
-export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
+export const ChatStatusBar: React.FC<ChatStatusBarProps> = React.memo(({
   model,
-  sessionId,
-  tokenUsage,
-  messageCount,
-  queuedCommands,
-  themeName,
   isVisible = true,
 }) => {
   const theme = themeManager.getTheme();
+  
+  // 自己订阅需要的状态
+  const sessionId = useSessionId();
+  const tokenUsage = useTokenUsage();
+  const messageCount = useMessageCount();
+  const queuedCommands = usePendingCommands().length;
+  const themeName = theme.name;
 
   if (!isVisible) {
     return null;
@@ -88,7 +82,7 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
   }
 
   // Queue (only if > 0)
-  if (queuedCommands !== undefined && queuedCommands > 0) {
+  if (queuedCommands > 0) {
     segments.push({
       content: (
         <>
@@ -100,13 +94,13 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
   }
 
   // Tokens - input/output format
-  if (tokenUsage && tokenUsage.total > 0) {
+  if (tokenUsage && (tokenUsage.inputTokens + tokenUsage.outputTokens) > 0) {
     segments.push({
       content: (
         <>
           <Text color={theme.colors.text.muted}>tokens:</Text>
           <Text color={theme.colors.info}>
-            {formatTokens(tokenUsage.input)}/{formatTokens(tokenUsage.output)}
+            {formatTokens(tokenUsage.inputTokens)}/{formatTokens(tokenUsage.outputTokens)}
           </Text>
         </>
       ),
@@ -165,6 +159,8 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = ({
       <Text color={theme.colors.text.muted} dimColor> ─</Text>
     </Box>
   );
-};
+});
+
+ChatStatusBar.displayName = 'ChatStatusBar';
 
 export default ChatStatusBar;

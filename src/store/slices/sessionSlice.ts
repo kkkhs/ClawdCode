@@ -72,6 +72,77 @@ export const createSessionSlice: StateCreator<
     },
 
     /**
+     * 开始流式助手消息（创建空消息占位）
+     */
+    startStreamingMessage: () => {
+      const id = `assistant-${generateId()}`;
+      const message: SessionMessage = {
+        id,
+        role: 'assistant',
+        content: '',
+        thinking: '',
+        timestamp: Date.now(),
+        isStreaming: true,
+      };
+      set((state) => ({
+        session: {
+          ...state.session,
+          messages: [...state.session.messages, message],
+          error: null,
+        },
+      }));
+      return id;
+    },
+
+    /**
+     * 追加内容到流式消息
+     */
+    appendToStreamingMessage: (id: string, contentDelta: string) => {
+      set((state) => ({
+        session: {
+          ...state.session,
+          messages: state.session.messages.map(msg =>
+            msg.id === id
+              ? { ...msg, content: msg.content + contentDelta }
+              : msg
+          ),
+        },
+      }));
+    },
+
+    /**
+     * 追加思考内容到流式消息
+     */
+    appendThinkingToStreamingMessage: (id: string, thinkingDelta: string) => {
+      set((state) => ({
+        session: {
+          ...state.session,
+          messages: state.session.messages.map(msg =>
+            msg.id === id
+              ? { ...msg, thinking: (msg.thinking || '') + thinkingDelta }
+              : msg
+          ),
+        },
+      }));
+    },
+
+    /**
+     * 完成流式消息
+     */
+    finishStreamingMessage: (id: string) => {
+      set((state) => ({
+        session: {
+          ...state.session,
+          messages: state.session.messages.map(msg =>
+            msg.id === id
+              ? { ...msg, isStreaming: false }
+              : msg
+          ),
+        },
+      }));
+    },
+
+    /**
      * 设置思考状态
      */
     setThinking: (isThinking: boolean) => {
