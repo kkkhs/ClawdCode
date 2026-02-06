@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.7.0](https://github.com/kkkhs/ClawdCode/compare/v1.6.0...v1.7.0) (2026-02-06)
+
+
+### Features
+
+* **hooks:** implement complete Hooks system with HookService facade ([bdd6672](https://github.com/kkkhs/ClawdCode/commit/bdd6672e38e6ae7b5e7f61bf92069516e7799847))
+* **skills:** implement Skills system with progressive disclosure ([163ae0c](https://github.com/kkkhs/ClawdCode/commit/163ae0c63ca2e0ed09f1df99e4b905147dffa3df))
+* **slash-commands:** send custom command content to Agent ([f7916eb](https://github.com/kkkhs/ClawdCode/commit/f7916eba38e49bf62712a3556da7b0aed1989613))
+
 ## [1.6.0](https://github.com/kkkhs/ClawdCode/compare/v1.5.0...v1.6.0) (2026-02-06)
 
 
