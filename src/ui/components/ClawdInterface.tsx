@@ -71,7 +71,58 @@ function createThrottledStreamUpdater(
 }
 
 import { Agent } from '../../agent/Agent.js';
-import type { Message, ChatContext } from '../../agent/types.js';
+import type { Message, ChatContext, ToolCall, ToolResult } from '../../agent/types.js';
+
+// ========== Tool Call 格式化 ==========
+
+/**
+ * 格式化工具调用参数摘要
+ */
+function formatToolArgs(name: string, argsJson?: string): string {
+  if (!argsJson) return '';
+  try {
+    const args = JSON.parse(argsJson);
+    switch (name) {
+      case 'Read':
+        return args.file_path || '';
+      case 'Bash': {
+        const cmd = args.command || '';
+        return cmd.length > 80 ? cmd.slice(0, 77) + '...' : cmd;
+      }
+      case 'Edit':
+        return args.file_path || '';
+      case 'Write':
+        return args.file_path || '';
+      case 'Glob':
+        return args.pattern || '';
+      case 'Grep':
+        return `${args.pattern || ''}${args.path ? ` in ${args.path}` : ''}`;
+      default: {
+        // MCP / other tools: show first string arg briefly
+        const entries = Object.entries(args);
+        if (entries.length === 0) return '';
+        const [key, val] = entries[0];
+        const valStr = String(val);
+        return `${key}=${valStr.length > 40 ? valStr.slice(0, 37) + '...' : valStr}`;
+      }
+    }
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * 格式化工具结果摘要（极简）
+ */
+function formatToolResult(result: ToolResult): string {
+  if (result.error) {
+    const err = result.error
+      .replace(/^(Error|error):\s*/, '')
+      .split('\n')[0];
+    return err.length > 50 ? err.slice(0, 47) + '...' : err;
+  }
+  return '';
+}
 
 // Store
 import {
@@ -79,9 +130,7 @@ import {
   useActiveModal,
   useSessionId,
   // 以下 hooks 仅在子组件中使用
-  useHasStreamingMessage,
   useMessages,
-  useIsThinking,
   usePendingCommands,
   useTokenUsage,
   // Actions
@@ -100,7 +149,7 @@ import { ContextManager, TokenCounter } from '../../context/index.js';
 // Components
 import { MessageRenderer } from './markdown/MessageRenderer.js';
 import { InputArea } from './input/InputArea.js';
-import { LoadingIndicator } from './common/LoadingIndicator.js';
+// LoadingIndicator 现在在 InputArea 内部使用
 import { ChatStatusBar } from './layout/ChatStatusBar.js';
 import { MessageList } from './layout/MessageList.js';
 import { ConfirmationPrompt } from './dialog/ConfirmationPrompt.js';
@@ -155,19 +204,7 @@ const QueuedCommands: React.FC = React.memo(() => {
 
 QueuedCommands.displayName = 'QueuedCommands';
 
-/**
- * 加载指示器包装组件 - 自己订阅状态
- */
-const ThinkingIndicator: React.FC = React.memo(() => {
-  const isThinking = useIsThinking();
-  const hasStreamingMessage = useHasStreamingMessage();
-  
-  if (!isThinking || hasStreamingMessage) return null;
-  
-  return <LoadingIndicator />;
-});
-
-ThinkingIndicator.displayName = 'ThinkingIndicator';
+// ThinkingIndicator 已移入 InputArea 组件，紧贴输入框上方显示
 
 /**
  * 最近消息预览组件（用于选择器模式）
@@ -225,6 +262,9 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   const agentRef = useRef<Agent | null>(null);
   const contextManagerRef = useRef<ContextManager | null>(null);
   const initialMessageSent = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const streamUpdaterRef = useRef<ReturnType<typeof createThrottledStreamUpdater> | null>(null);
+  const streamingMessageIdRef = useRef<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
   const [isExiting, setIsExiting] = useState(false);
@@ -244,12 +284,26 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   });
 
   // ==================== Hooks ====================
-  const { confirmationState, handleResponse } = useConfirmation();
+  const { confirmationState, confirmationHandler, handleResponse } = useConfirmation();
 
   // Ctrl+C handler - 自己通过 getState() 获取状态
   useCtrlCHandler({
     onInterrupt: () => {
-      // TODO: Abort current operation
+      // 1. 中止正在进行的 API 调用
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      // 2. 清理流式缓冲并完成消息
+      if (streamUpdaterRef.current) {
+        streamUpdaterRef.current.clear();
+        streamUpdaterRef.current = null;
+      }
+      if (streamingMessageIdRef.current) {
+        sessionActions().finishStreamingMessage(streamingMessageIdRef.current);
+        streamingMessageIdRef.current = null;
+      }
+      // 3. 重置 thinking 状态
       sessionActions().setThinking(false);
     },
     onBeforeExit: () => {
@@ -399,10 +453,13 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   }, [apiKey, baseURL, model, debug, resumeSessionId]);
 
   // ==================== Focus Management ====================
+  // Note: confirmation focus is managed synchronously in useConfirmation hook
   useEffect(() => {
     if (confirmationState.isVisible) {
-      focusActions().setFocus(FocusId.CONFIRMATION_PROMPT);
-    } else if (selectorState.isVisible) {
+      // Already handled synchronously by useConfirmation
+      return;
+    }
+    if (selectorState.isVisible) {
       focusActions().setFocus(FocusId.SELECTOR);
     } else if (activeModal === 'themeSelector') {
       focusActions().setFocus(FocusId.THEME_SELECTOR);
@@ -439,8 +496,10 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
   // ==================== Core Command Processor ====================
   /**
    * 处理单个命令的核心逻辑（包括 slash 命令和普通消息）
+   * @param value - 用户输入或自定义命令展开后的内容
+   * @param options.silent - 为 true 时不在 UI 中显示用户消息（用于 sendToAgent 转发）
    */
-  const processCommand = useCallback(async (value: string) => {
+  const processCommand = useCallback(async (value: string, options?: { silent?: boolean }) => {
     // 检查是否是 slash 命令
     const { isSlashCommand, executeSlashCommand } = await import('../../slash-commands/index.js');
     
@@ -474,8 +533,8 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
         // 自定义命令：将内容发送给 Agent 执行（对齐 Claude Code 设计）
         if (result.sendToAgent && result.content) {
           sessionActions().setThinking(false);
-          // 递归调用 processCommand，将处理后的 prompt 发送给 Agent
-          await processCommand(result.content);
+          // 递归调用 processCommand，silent=true 不在 UI 显示展开后的完整内容
+          await processCommand(result.content, { silent: true });
           return;
         }
         
@@ -485,11 +544,11 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
         } else if (result.message) {
           sessionActions().addAssistantMessage(result.message);
         } else if (result.error) {
-          sessionActions().addAssistantMessage(`❌ ${result.error}`);
+          sessionActions().addAssistantMessage(`error: ${result.error}`);
         }
       } catch (error) {
         sessionActions().addAssistantMessage(
-          `❌ 命令执行失败: ${error instanceof Error ? error.message : String(error)}`
+          `error: ${error instanceof Error ? error.message : String(error)}`
         );
       } finally {
         sessionActions().setThinking(false);
@@ -502,8 +561,10 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
 
     const ctxManager = contextManagerRef.current;
 
-    // 添加用户消息到 UI Store
-    sessionActions().addUserMessage(value);
+    // 添加用户消息到 UI Store（silent 模式下不显示，避免展开的自定义命令内容刷屏）
+    if (!options?.silent) {
+      sessionActions().addUserMessage(value);
+    }
 
     // 设置 thinking 状态
     sessionActions().setThinking(true);
@@ -531,6 +592,11 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
 
     // 创建流式消息占位
     const streamingMessageId = sessionActions().startStreamingMessage();
+    streamingMessageIdRef.current = streamingMessageId;
+
+    // 创建 AbortController 用于 Ctrl+C 中断
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     // 创建节流更新器（每 50ms 批量更新一次，避免频繁重绘）
     const streamUpdater = createThrottledStreamUpdater(
@@ -538,6 +604,7 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
       (delta) => sessionActions().appendThinkingToStreamingMessage(streamingMessageId, delta),
       50 // 50ms 节流间隔
     );
+    streamUpdaterRef.current = streamUpdater;
 
     try {
       // 从 ContextManager 获取消息构建 ChatContext
@@ -550,24 +617,49 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
         modelName
       );
 
-      // 构建 ChatContext
+      // 构建 ChatContext（含确认处理器，用于工具权限确认）
       const chatContext: ChatContext = {
         sessionId: ctxManager.getCurrentSessionId() || sessionId,
         messages: contextMessages.map(m => ({
           role: m.role as Message['role'],
           content: m.content,
         })),
+        confirmationHandler,
       };
 
-      // 调用 Agent（带节流的流式回调）
+      // 调用 Agent（带节流的流式回调 + AbortSignal + 工具回调）
       const result = await agentRef.current.chat(value, chatContext, {
+        signal: abortController.signal,
         // 流式内容回调（节流）
         onContentDelta: (delta) => {
-          streamUpdater.appendContent(delta);
+          if (!abortController.signal.aborted) {
+            streamUpdater.appendContent(delta);
+          }
         },
         // 流式思考内容回调（节流）
         onThinkingDelta: (delta) => {
-          streamUpdater.appendThinking(delta);
+          if (!abortController.signal.aborted) {
+            streamUpdater.appendThinking(delta);
+          }
+        },
+        // 工具调用开始：单行显示，等待结果补充
+        onToolCallStart: (toolCall) => {
+          if (abortController.signal.aborted) return;
+          streamUpdater.flush();
+          const name = toolCall.function?.name || 'tool';
+          const args = formatToolArgs(name, toolCall.function?.arguments);
+          const line = args ? `\n  ${name} ${args}` : `\n  ${name}`;
+          sessionActions().appendToStreamingMessage(streamingMessageId, line);
+        },
+        // 工具调用完成：同行追加结果标记
+        onToolResult: (_toolCall: ToolCall, toolResult: ToolResult) => {
+          if (abortController.signal.aborted) return;
+          const err = formatToolResult(toolResult);
+          const suffix = toolResult.success ? ' ✓' : ` ✗ ${err}`;
+          sessionActions().appendToStreamingMessage(
+            streamingMessageId,
+            `${suffix}\n`
+          );
         },
       });
 
@@ -603,17 +695,26 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
       // 清理节流缓冲
       streamUpdater.clear();
       
-      const errorContent = `Error: ${(error as Error).message}`;
-      // 更新流式消息为错误内容
-      sessionActions().appendToStreamingMessage(streamingMessageId, errorContent);
-      sessionActions().finishStreamingMessage(streamingMessageId);
-      
-      // 错误也记录到 ContextManager
-      await ctxManager.addMessage('assistant', errorContent);
+      // 如果是用户中断，不显示错误
+      if (abortController.signal.aborted) {
+        sessionActions().finishStreamingMessage(streamingMessageId);
+      } else {
+        const errorContent = `Error: ${(error as Error).message}`;
+        // 更新流式消息为错误内容
+        sessionActions().appendToStreamingMessage(streamingMessageId, errorContent);
+        sessionActions().finishStreamingMessage(streamingMessageId);
+        
+        // 错误也记录到 ContextManager
+        await ctxManager.addMessage('assistant', errorContent);
+      }
     } finally {
+      // 清理 refs
+      abortControllerRef.current = null;
+      streamUpdaterRef.current = null;
+      streamingMessageIdRef.current = null;
       sessionActions().setThinking(false);
     }
-  }, [debug, model, sessionId, getMessages]);
+  }, [debug, model, sessionId, getMessages, confirmationHandler]);
 
   // ==================== Queue Processor ====================
   /**
@@ -717,16 +818,6 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
     );
   }
 
-  // 阻塞式模态框（确认对话框）
-  if (confirmationState.isVisible && confirmationState.details) {
-    return (
-      <ConfirmationPrompt
-        details={confirmationState.details}
-        onResponse={handleResponse}
-      />
-    );
-  }
-
   // 交互式选择器
   if (selectorState.isVisible) {
     return (
@@ -775,12 +866,17 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
       <Box flexDirection="column" marginBottom={1}>
         <MessageList terminalWidth={terminalWidth - 2} />
 
-        {/* 加载指示器 - 自己订阅状态 */}
-        <ThinkingIndicator />
-
         {/* 队列中的命令预览 - 自己订阅状态 */}
         <QueuedCommands />
       </Box>
+
+      {/* 权限确认 - 内联在输入框上方 */}
+      {confirmationState.isVisible && confirmationState.details && (
+        <ConfirmationPrompt
+          details={confirmationState.details}
+          onResponse={handleResponse}
+        />
+      )}
 
       {/* 输入区域 - 完全自管理状态（包括命令历史） */}
       <InputArea

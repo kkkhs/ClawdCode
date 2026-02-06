@@ -113,26 +113,21 @@ export const ChatStatusBar: React.FC<ChatStatusBarProps> = React.memo(({
       content: (
         <>
           <Text color={theme.colors.text.muted}>theme:</Text>
-          <Text color={theme.colors.text.secondary}>{themeName}</Text>
+          <Text color={theme.colors.accent}>{themeName}</Text>
         </>
       ),
-      dimmed: true,
     });
   }
 
-  // Session ID (truncated for display)
+  // Session ID
   if (sessionId) {
-    const shortId = sessionId.length > 12 
-      ? `${sessionId.slice(0, 8)}..${sessionId.slice(-4)}`
-      : sessionId;
     segments.push({
       content: (
         <>
           <Text color={theme.colors.text.muted}>sid:</Text>
-          <Text color={theme.colors.text.muted}>{shortId}</Text>
+          <Text color={theme.colors.info} dimColor>{sessionId}</Text>
         </>
       ),
-      dimmed: true,
     });
   }
 

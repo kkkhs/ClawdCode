@@ -6,19 +6,19 @@ import type { SlashCommand, SlashCommandResult } from './types.js';
 import { McpRegistry, McpConnectionStatus } from '../mcp/index.js';
 
 /**
- * 获取状态图标
+ * 获取状态标记
  */
-function getStatusEmoji(status: McpConnectionStatus): string {
+function getStatusMark(status: McpConnectionStatus): string {
   switch (status) {
     case McpConnectionStatus.CONNECTED:
-      return '🟢';
+      return '+';
     case McpConnectionStatus.CONNECTING:
-      return '🟡';
+      return '~';
     case McpConnectionStatus.ERROR:
-      return '🔴';
+      return 'x';
     case McpConnectionStatus.DISCONNECTED:
     default:
-      return '⚪';
+      return '-';
   }
 }
 
@@ -26,7 +26,7 @@ function getStatusEmoji(status: McpConnectionStatus): string {
  * 格式化时间
  */
 function formatTime(date: Date | undefined): string {
-  if (!date) return 'N/A';
+  if (!date) return '-';
   return date.toLocaleTimeString();
 }
 
@@ -35,7 +35,7 @@ function formatTime(date: Date | undefined): string {
  */
 export const mcpCommand: SlashCommand = {
   name: 'mcp',
-  description: '显示 MCP 服务器状态和可用工具',
+  description: 'Show MCP server status and tools',
   usage: '/mcp [tools|<server-name>]',
 
   async handler(args): Promise<SlashCommandResult> {
@@ -48,11 +48,11 @@ export const mcpCommand: SlashCommand = {
       return {
         success: true,
         type: 'info',
-        content: `## MCP 服务器状态
+        content: `## mcp
 
-📭 **未配置任何 MCP 服务器**
+no servers configured.
 
-要添加 MCP 服务器，请在配置文件中添加 \`mcpServers\` 配置：
+add \`mcpServers\` to config:
 
 \`\`\`json
 // ~/.clawdcode/config.json
@@ -90,28 +90,27 @@ export const mcpCommand: SlashCommand = {
     }
 
     // 默认：显示概览
-    let output = '## MCP 服务器状态\n\n';
-    output += `| 指标 | 值 |\n`;
-    output += `|------|----|\n`;
-    output += `| 总服务器 | ${stats.totalServers} |\n`;
-    output += `| 已连接 | ${stats.connectedServers} |\n`;
-    output += `| 错误 | ${stats.errorServers} |\n`;
-    output += `| 总工具数 | ${stats.totalTools} |\n`;
+    let output = '## mcp\n\n';
+    output += `| key | value |\n`;
+    output += `|-----|-------|\n`;
+    output += `| servers | ${stats.totalServers} |\n`;
+    output += `| connected | ${stats.connectedServers} |\n`;
+    output += `| errors | ${stats.errorServers} |\n`;
+    output += `| tools | ${stats.totalTools} |\n`;
     output += '\n';
 
-    output += '### 服务器列表\n\n';
-    output += '| 状态 | 服务器 | 工具数 | 连接时间 |\n';
-    output += '|------|--------|--------|----------|\n';
+    output += '### servers\n\n';
+    output += '| st | server | tools | connected |\n';
+    output += '|----|--------|-------|-----------|\n';
 
     for (const [name, info] of servers) {
-      const emoji = getStatusEmoji(info.status);
+      const mark = getStatusMark(info.status);
       const toolCount = info.status === McpConnectionStatus.CONNECTED ? info.tools.length : '-';
       const connectedAt = formatTime(info.connectedAt);
-      output += `| ${emoji} | ${name} | ${toolCount} | ${connectedAt} |\n`;
+      output += `| ${mark} | ${name} | ${toolCount} | ${connectedAt} |\n`;
     }
 
-    output += '\n---\n';
-    output += '💡 **提示：** 使用 `/mcp tools` 查看所有工具，或 `/mcp <服务器名>` 查看详情\n';
+    output += `\n\`/mcp tools\` to list all tools · \`/mcp <name>\` for details\n`;
 
     return {
       success: true,
@@ -131,19 +130,17 @@ async function handleToolsSubcommand(registry: McpRegistry): Promise<SlashComman
     return {
       success: true,
       type: 'info',
-      content: '## MCP 工具\n\n📭 **没有可用的 MCP 工具**\n\n请确保至少有一个 MCP 服务器已连接。',
+      content: '## mcp tools\n\nno tools available. ensure at least one server is connected.',
     };
   }
 
-  let output = '## MCP 可用工具\n\n';
-  output += `共 **${tools.length}** 个工具可用\n\n`;
-  output += '| 工具名 | 描述 | 分类 |\n';
-  output += '|--------|------|------|\n';
+  let output = `## mcp tools (${tools.length})\n\n`;
+  output += '| tool | description | type |\n';
+  output += '|------|-------------|------|\n';
 
   for (const tool of tools) {
     const description = tool.description?.short || '-';
     const category = tool.category || 'mcp';
-    // 截断过长的描述
     const shortDesc = description.length > 50 ? description.slice(0, 47) + '...' : description;
     output += `| \`${tool.name}\` | ${shortDesc} | ${category} |\n`;
   }
@@ -159,30 +156,27 @@ async function handleToolsSubcommand(registry: McpRegistry): Promise<SlashComman
  * 处理特定服务器详情
  */
 function handleServerDetail(name: string, info: any): SlashCommandResult {
-  const emoji = getStatusEmoji(info.status);
+  let output = `## mcp: ${name}\n\n`;
 
-  let output = `## ${emoji} MCP 服务器: ${name}\n\n`;
-
-  output += '### 基本信息\n\n';
-  output += `| 属性 | 值 |\n`;
-  output += `|------|----|\n`;
-  output += `| 状态 | ${info.status} |\n`;
-  output += `| 类型 | ${info.config.type} |\n`;
+  output += `| key | value |\n`;
+  output += `|-----|-------|\n`;
+  output += `| status | ${info.status} |\n`;
+  output += `| type | ${info.config.type} |\n`;
 
   if (info.serverName) {
-    output += `| 服务器名 | ${info.serverName} |\n`;
+    output += `| name | ${info.serverName} |\n`;
   }
   if (info.serverVersion) {
-    output += `| 版本 | ${info.serverVersion} |\n`;
+    output += `| version | ${info.serverVersion} |\n`;
   }
   if (info.connectedAt) {
-    output += `| 连接时间 | ${info.connectedAt.toLocaleString()} |\n`;
+    output += `| connected | ${info.connectedAt.toLocaleString()} |\n`;
   }
   if (info.lastError) {
-    output += `| 最后错误 | ${info.lastError.message} |\n`;
+    output += `| error | ${info.lastError.message} |\n`;
   }
 
-  output += '\n### 配置\n\n';
+  output += '\n### config\n\n';
   output += '```json\n';
   output += JSON.stringify(
     {
@@ -197,9 +191,9 @@ function handleServerDetail(name: string, info: any): SlashCommandResult {
   output += '\n```\n';
 
   if (info.status === McpConnectionStatus.CONNECTED && info.tools.length > 0) {
-    output += '\n### 可用工具\n\n';
+    output += '\n### tools\n\n';
     for (const tool of info.tools) {
-      output += `- \`${tool.name}\`: ${tool.description || '-'}\n`;
+      output += `- \`${tool.name}\` ${tool.description || '-'}\n`;
     }
   }
 

@@ -103,6 +103,9 @@ export const useTodos = () =>
 export const useAwaitingSecondCtrlC = () =>
   useClawdStore((state) => state.app.awaitingSecondCtrlC);
 
+export const useShowAllThinking = () =>
+  useClawdStore((state) => state.app.showAllThinking);
+
 // ========== Focus 选择器 ==========
 
 export const useCurrentFocus = () =>

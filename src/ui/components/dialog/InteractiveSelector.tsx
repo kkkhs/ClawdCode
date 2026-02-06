@@ -7,7 +7,8 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { themeManager } from '../../themes/index.js';
-import { useCurrentFocus, FocusId } from '../../../store/index.js';
+import { FocusId } from '../../../store/index.js';
+import { focusManager } from '../../focus/index.js';
 
 export interface SelectorOption<T = string> {
   /** 选项值 */
@@ -47,14 +48,13 @@ export function InteractiveSelector<T = string>({
   focusId = FocusId.SELECTOR,
 }: InteractiveSelectorProps<T>): React.ReactElement {
   const theme = themeManager.getTheme();
-  const currentFocus = useCurrentFocus();
-  const isFocused = currentFocus === focusId;
   const [selectedIndex, setSelectedIndex] = useState(initialIndex);
 
   // 处理键盘输入
   useInput(
     (input, key) => {
-      if (!isFocused) return;
+      // Imperative focus check — avoids stale React closure
+      if (focusManager.getCurrentFocus() !== focusId) return;
 
       if (key.upArrow || input === 'k') {
         setSelectedIndex(prev => (prev > 0 ? prev - 1 : options.length - 1));
@@ -66,7 +66,6 @@ export function InteractiveSelector<T = string>({
         onCancel();
       }
     },
-    { isActive: isFocused }
   );
 
   // 当 options 变化时重置索引

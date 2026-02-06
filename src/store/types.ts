@@ -96,6 +96,8 @@ export interface AppState {
   activeModal: ActiveModal;
   todos: TodoItem[];
   awaitingSecondCtrlC: boolean;
+  /** 是否展开所有思考块（全局开关） */
+  showAllThinking: boolean;
 }
 
 export interface AppActions {
@@ -107,6 +109,7 @@ export interface AppActions {
   updateTodo: (id: string, updates: Partial<TodoItem>) => void;
   removeTodo: (id: string) => void;
   setAwaitingSecondCtrlC: (awaiting: boolean) => void;
+  toggleShowAllThinking: () => void;
 }
 
 export interface AppSlice extends AppState {

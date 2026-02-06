@@ -251,6 +251,8 @@ export class Agent {
 
     let turnsCount = 0;
     let recentRetries = 0;
+    let consecutiveToolFailures = 0;
+    const MAX_CONSECUTIVE_FAILURES = 3;
     const allToolResults: ToolResult[] = [];
 
     // 获取工具定义
@@ -279,11 +281,10 @@ export class Agent {
       turnsCount++;
       options?.onTurnStart?.({ turn: turnsCount, maxTurns });
 
-      // 3.4 构建流式回调
+      // 3.4 构建流式回调（onToolCallStart 在执行阶段单独触发，此处不传）
       const streamCallbacks: StreamCallbacks = {
         onContentDelta: options?.onContentDelta,
         onThinkingDelta: options?.onThinkingDelta,
-        onToolCallStart: options?.onToolCallStart,
       };
 
       // 3.5 调用 LLM（流式）
@@ -368,6 +369,7 @@ export class Agent {
       });
 
       // 3.8 执行每个工具调用
+      let turnHasFailure = false;
       for (const toolCall of turnResult.toolCalls) {
         if (toolCall.type !== 'function') continue;
 
@@ -376,12 +378,28 @@ export class Agent {
           return { success: false, error: { type: 'aborted' } };
         }
 
-        // 执行工具 [TODO: 第 6-7 章实现完整工具执行]
+        // 通知 UI 工具调用开始（此处有完整的工具调用数据）
+        options?.onToolCallStart?.(toolCall);
+
+        // 执行工具
         const result = await this.executeToolCall(toolCall, context);
         allToolResults.push(result);
 
-        // 通知 UI 更新状态
+        // 通知 UI 工具调用完成
         options?.onToolResult?.(toolCall, result);
+
+        // 用户拒绝 → 立即终止循环，不再继续思考
+        if (!result.success && result.error?.includes('User rejected')) {
+          return {
+            success: true,
+            metadata: {
+              turnsCount,
+              toolCallsCount: allToolResults.length,
+            },
+          };
+        }
+
+        if (!result.success) turnHasFailure = true;
 
         // 添加工具结果到消息历史
         messages.push({
@@ -390,6 +408,20 @@ export class Agent {
           name: toolCall.function.name,
           content: result.llmContent || result.displayContent || '',
         });
+      }
+
+      // 3.9 连续工具失败检测（防止无限重试循环）
+      if (turnHasFailure) {
+        consecutiveToolFailures++;
+        if (consecutiveToolFailures >= MAX_CONSECUTIVE_FAILURES) {
+          // 注入提示让 LLM 停止重试
+          messages.push({
+            role: 'user',
+            content: '[System] Multiple consecutive tool failures detected. Please stop retrying and explain the issue to the user.',
+          });
+        }
+      } else {
+        consecutiveToolFailures = 0;
       }
 
       // === 4. 轮次上限处理 ===

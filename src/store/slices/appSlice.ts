@@ -11,6 +11,7 @@ const initialAppState = {
   activeModal: 'none' as ActiveModal,
   todos: [] as TodoItem[],
   awaitingSecondCtrlC: false,
+  showAllThinking: false,
 };
 
 export const createAppSlice: StateCreator<
@@ -106,6 +107,15 @@ export const createAppSlice: StateCreator<
     setAwaitingSecondCtrlC: (awaiting: boolean) => {
       set((state) => ({
         app: { ...state.app, awaitingSecondCtrlC: awaiting },
+      }));
+    },
+
+    /**
+     * 切换全局思考块展开/折叠
+     */
+    toggleShowAllThinking: () => {
+      set((state) => ({
+        app: { ...state.app, showAllThinking: !state.app.showAllThinking },
       }));
     },
   },

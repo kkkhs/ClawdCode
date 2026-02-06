@@ -49,6 +49,7 @@ export {
   useActiveModal,
   useTodos,
   useAwaitingSecondCtrlC,
+  useShowAllThinking,
   // Focus
   useCurrentFocus,
   usePreviousFocus,

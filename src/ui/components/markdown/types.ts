@@ -36,6 +36,8 @@ export interface ParsedBlock {
   type: BlockType;
   content: string;
   language?: string;
+  /** 代码块关联的文件路径 */
+  filePath?: string;
   level?: number;
   listType?: ListType;
   marker?: string;

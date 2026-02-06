@@ -18,6 +18,8 @@ interface CodeHighlighterProps {
   content: string;
   /** 代码语言 */
   language?: string;
+  /** 文件路径 */
+  filePath?: string;
   /** 是否显示行号 */
   showLineNumbers?: boolean;
   /** 终端宽度 */
@@ -32,6 +34,7 @@ interface CodeHighlighterProps {
 export const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
   content,
   language,
+  filePath,
   showLineNumbers = true,
   terminalWidth = 80,
   startLine = 1,
@@ -56,14 +59,24 @@ export const CodeHighlighter: React.FC<CodeHighlighterProps> = ({
       paddingX={1}
       marginY={1}
     >
-      {/* 语言标签 */}
-      {language && (
-        <Box marginBottom={1}>
-          <Text color={theme.colors.text.muted} dimColor>
-            {language}
-          </Text>
+      {/* 文件路径 + 语言标签 + copy hint */}
+      <Box marginBottom={1} justifyContent="space-between">
+        <Box>
+          {filePath ? (
+            <>
+              <Text color={theme.colors.info}>{filePath}</Text>
+              {language && (
+                <Text color={theme.colors.text.muted} dimColor> {language}</Text>
+              )}
+            </>
+          ) : language ? (
+            <Text color={theme.colors.text.muted} dimColor>{language}</Text>
+          ) : null}
         </Box>
-      )}
+        <Box>
+          <Text color={theme.colors.text.muted} dimColor>/copy</Text>
+        </Box>
+      </Box>
 
       {/* 代码内容 */}
       {lines.map((line, index) => {

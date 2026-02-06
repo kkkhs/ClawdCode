@@ -37,7 +37,8 @@
 ### 🤖 Intelligent Agent
 - Natural language interface for coding tasks
 - **Streaming output** with real-time response
-- **Thinking process** display (DeepSeek R1, etc.)
+- **Thinking process** with auto-collapse/expand
+- **Tool call display** with compact dim-styled logs
 - Context-aware project understanding
 
 </td>
@@ -48,6 +49,7 @@
 - **Code Search** - Glob and Grep integration  
 - **Command Execution** - Safe shell operations
 - **MCP Protocol** - Extensible tool ecosystem
+- **Code block paths** - File paths in code fences
 
 </td>
 </tr>
@@ -55,9 +57,10 @@
 <td width="50%">
 
 ### 🔒 Security First
-- Fine-grained permission control
-- User confirmation for write operations
+- **Inline permission prompt** above input area
+- User confirmation for write/execute operations
 - Configurable allow/deny rules
+- **Deny stops agent** - no continued thinking
 - Multiple permission modes
 
 </td>
@@ -68,6 +71,7 @@
 - Markdown rendering & syntax highlighting
 - **Auto theme detection** (dark/light terminal)
 - **Theme persistence** across sessions
+- **`/copy` command** - Copy code blocks to clipboard
 
 </td>
 </tr>
@@ -127,6 +131,8 @@ clawdcode --continue
 /theme     Switch theme (dark/light/ocean/...)
 /status    Show session status
 /mcp       MCP server status
+/copy      Copy code block to clipboard (/copy list)
+/thinking  Toggle thinking blocks expand/collapse
 ```
 
 ## 📝 Custom Commands

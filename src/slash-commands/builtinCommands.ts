@@ -11,7 +11,7 @@ import { sessionActions, getState } from '../store/index.js';
 export const helpCommand: SlashCommand = {
   name: 'help',
   aliases: ['?', 'h'],
-  description: '显示所有可用命令',
+  description: 'Show available commands',
   category: 'general',
   usage: '/help [command]',
 
@@ -29,15 +29,15 @@ export const helpCommand: SlashCommand = {
         content += `${cmd.fullDescription || cmd.description}\n\n`;
         
         if (cmd.usage) {
-          content += `**用法：** \`${cmd.usage}\`\n\n`;
+          content += `**usage:** \`${cmd.usage}\`\n\n`;
         }
         
         if (cmd.aliases && cmd.aliases.length > 0) {
-          content += `**别名：** ${cmd.aliases.map(a => `\`/${a}\``).join(', ')}\n\n`;
+          content += `**aliases:** ${cmd.aliases.map(a => `\`/${a}\``).join(', ')}\n\n`;
         }
         
         if (cmd.examples && cmd.examples.length > 0) {
-          content += `**示例：**\n`;
+          content += `**examples:**\n`;
           for (const example of cmd.examples) {
             content += `- \`${example}\`\n`;
           }
@@ -49,7 +49,7 @@ export const helpCommand: SlashCommand = {
       return {
         success: false,
         type: 'error',
-        error: `未知命令: /${trimmedArgs}`,
+        error: `unknown command: /${trimmedArgs}`,
       };
     }
     
@@ -68,17 +68,17 @@ export const helpCommand: SlashCommand = {
     
     // 分类名称映射
     const categoryNames: Record<string, string> = {
-      general: '📋 通用',
-      session: '💬 会话',
-      config: '⚙️ 配置',
-      skills: '🧠 Skills',
-      hooks: '🪝 Hooks',
-      git: '🔀 Git',
-      mcp: '🔌 MCP',
-      custom: '📝 自定义',
+      general: 'general',
+      session: 'session',
+      config: 'config',
+      skills: 'skills',
+      hooks: 'hooks',
+      git: 'git',
+      mcp: 'mcp',
+      custom: 'custom',
     };
     
-    let content = '## 📚 可用命令\n\n';
+    let content = '## Commands\n\n';
     
     for (const [category, cmds] of Object.entries(grouped)) {
       const categoryName = categoryNames[category] || category;
@@ -93,8 +93,7 @@ export const helpCommand: SlashCommand = {
       content += '\n';
     }
     
-    content += '---\n';
-    content += '💡 **提示：** 使用 `/help <命令>` 查看命令详情\n';
+    content += `\`/help <cmd>\` for details\n`;
     
     return { success: true, type: 'info', content };
   },
@@ -106,7 +105,7 @@ export const helpCommand: SlashCommand = {
 export const clearCommand: SlashCommand = {
   name: 'clear',
   aliases: ['cls'],
-  description: '清除对话历史和屏幕',
+  description: 'Clear chat history',
   category: 'session',
   usage: '/clear',
 
@@ -116,7 +115,7 @@ export const clearCommand: SlashCommand = {
     return {
       success: true,
       type: 'success',
-      message: '✓ 已清除对话历史',
+      message: 'cleared',
     };
   },
 };
@@ -126,10 +125,10 @@ export const clearCommand: SlashCommand = {
  */
 export const compactCommand: SlashCommand = {
   name: 'compact',
-  description: '手动压缩上下文',
+  description: 'Compact context manually',
   category: 'session',
   usage: '/compact',
-  fullDescription: '手动触发上下文压缩，将对话历史总结为简洁的摘要以节省 Token',
+  fullDescription: 'Trigger manual context compaction, summarizing conversation history to save tokens.',
 
   async handler(_args: string, context: SlashCommandContext): Promise<SlashCommandResult> {
     const { contextManager, chatService, modelName } = context;
@@ -138,7 +137,7 @@ export const compactCommand: SlashCommand = {
       return {
         success: false,
         type: 'error',
-        error: '上下文管理器不可用',
+        error: 'context manager unavailable',
       };
     }
 
@@ -154,7 +153,7 @@ export const compactCommand: SlashCommand = {
         return {
           success: true,
           type: 'info',
-          message: '📝 对话历史过短，无需压缩',
+          message: 'history too short, skipping compaction',
         };
       }
 
@@ -202,29 +201,29 @@ export const compactCommand: SlashCommand = {
         return {
           success: true,
           type: 'success',
-          content: `## ✅ 上下文压缩完成
+          content: `## Context compacted
 
-| 指标 | 值 |
-|------|-----|
-| 压缩前 | ${result.preTokens.toLocaleString()} tokens |
-| 压缩后 | ${result.postTokens.toLocaleString()} tokens |
-| 节省 | ${savedTokens.toLocaleString()} tokens (${savedPercent}%) |
-| 包含文件 | ${result.filesIncluded.length} 个 |
+| metric | value |
+|--------|-------|
+| before | ${result.preTokens.toLocaleString()} tokens |
+| after | ${result.postTokens.toLocaleString()} tokens |
+| saved | ${savedTokens.toLocaleString()} tokens (${savedPercent}%) |
+| files | ${result.filesIncluded.length} |
 
-对话可以正常继续。`,
+conversation continues normally.`,
         };
       } else {
         return {
           success: false,
           type: 'error',
-          error: `压缩失败: ${result.error || '未知错误'}`,
+          error: `compaction failed: ${result.error || 'unknown'}`,
         };
       }
     } catch (error) {
       return {
         success: false,
         type: 'error',
-        error: `压缩执行出错: ${error instanceof Error ? error.message : String(error)}`,
+        error: `compaction error: ${error instanceof Error ? error.message : String(error)}`,
       };
     } finally {
       sessionActions().setCompacting(false);
@@ -238,7 +237,7 @@ export const compactCommand: SlashCommand = {
 export const versionCommand: SlashCommand = {
   name: 'version',
   aliases: ['v'],
-  description: '显示版本信息',
+  description: 'Show version info',
   category: 'general',
   usage: '/version',
 
@@ -255,14 +254,9 @@ export const versionCommand: SlashCommand = {
       // 忽略错误
     }
 
-    const content = `## ClawdCode
+    const content = `## ClawdCode v${version}
 
-**版本：** v${version}
-
-**运行时：** ${process.version} (${process.platform} ${process.arch})
-
----
-🔗 [GitHub](https://github.com/anthropics/claude-code) | 📖 [文档](https://docs.anthropic.com)
+runtime: ${process.version} · ${process.platform} ${process.arch}
 `;
 
     return {
@@ -279,11 +273,11 @@ export const versionCommand: SlashCommand = {
 export const modelCommand: SlashCommand = {
   name: 'model',
   aliases: ['m'],
-  description: '显示或切换模型',
+  description: 'Show or switch model',
   category: 'config',
   usage: '/model [model-id]',
   examples: ['/model', '/model gpt-4', '/model claude-3-5-sonnet'],
-  fullDescription: '显示当前模型信息，或切换到指定模型。不带参数时显示交互式选择器。',
+  fullDescription: 'Show current model info or switch to a specified model. Without args, opens interactive selector.',
 
   async handler(args: string, context: SlashCommandContext): Promise<SlashCommandResult> {
     const state = getState();
@@ -309,19 +303,19 @@ export const modelCommand: SlashCommand = {
         return {
           success: true,
           type: 'success',
-          message: `✓ 已切换到模型: ${targetModel.name || targetModel.model || targetModel.id}`,
+          message: `model -> ${targetModel.name || targetModel.model || targetModel.id}`,
         };
       }
       
       // 未找到，显示可用模型
-      let errorContent = `❌ 未找到模型: \`${trimmedArgs}\`\n\n`;
+      let errorContent = `unknown model: \`${trimmedArgs}\`\n\n`;
       if (models.length > 0) {
-        errorContent += `**可用模型：**\n`;
+        errorContent += `available:\n`;
         for (const m of models) {
-          errorContent += `- \`${m.id || m.model}\` - ${m.name || m.model || 'unnamed'}\n`;
+          errorContent += `- \`${m.id || m.model}\` ${m.name || m.model || ''}\n`;
         }
       } else {
-        errorContent += '未配置任何模型，请在配置文件中添加模型。';
+        errorContent += 'no models configured. add models to config.';
       }
       
       return {
@@ -338,7 +332,7 @@ export const modelCommand: SlashCommand = {
       return {
         success: true,
         type: 'info',
-        content: `## 🤖 当前模型\n\n\`${modelInfo}\`\n\n未配置多模型，请在 \`~/.clawdcode/config.json\` 中添加 \`models\` 数组。`,
+        content: `## model\n\ncurrent: \`${modelInfo}\`\n\nno models configured. add \`models\` array to \`~/.clawdcode/config.json\`.`,
       };
     }
     
@@ -347,7 +341,7 @@ export const modelCommand: SlashCommand = {
       success: true,
       type: 'selector',
       selector: {
-        title: '🤖 选择模型',
+        title: 'Select model',
         options: models.map(m => ({
           value: m.id || m.model || '',
           label: m.name || m.model || m.id || 'unnamed',
@@ -366,11 +360,11 @@ export const modelCommand: SlashCommand = {
 export const themeCommand: SlashCommand = {
   name: 'theme',
   aliases: ['t'],
-  description: '显示或切换主题',
+  description: 'Show or switch theme',
   category: 'config',
   usage: '/theme [theme-name]',
   examples: ['/theme', '/theme dark', '/theme ocean'],
-  fullDescription: '显示当前主题信息，或切换到指定主题。不带参数时显示交互式选择器。',
+  fullDescription: 'Show current theme or switch to a specified theme. Without args, opens interactive selector.',
 
   async handler(args: string): Promise<SlashCommandResult> {
     const { themeManager } = await import('../ui/themes/index.js');
@@ -388,14 +382,14 @@ export const themeCommand: SlashCommand = {
         return {
           success: true,
           type: 'success',
-          message: `✓ 主题已切换为 ${targetTheme.name}`,
+          message: `theme -> ${targetTheme.name}`,
         };
       }
       
       return {
         success: false,
         type: 'error',
-        error: `未知主题: ${trimmedArgs}\n可用主题: ${themePresets.map(t => t.id).join(', ')}`,
+        error: `unknown theme: ${trimmedArgs}\navailable: ${themePresets.map(t => t.id).join(', ')}`,
       };
     }
     
@@ -404,7 +398,7 @@ export const themeCommand: SlashCommand = {
       success: true,
       type: 'selector',
       selector: {
-        title: '🎨 选择主题',
+        title: 'Select theme',
         options: themePresets.map(t => ({
           value: t.id,
           label: t.name,
@@ -423,7 +417,7 @@ export const themeCommand: SlashCommand = {
 export const statusCommand: SlashCommand = {
   name: 'status',
   aliases: ['st'],
-  description: '显示当前会话状态',
+  description: 'Show session status',
   category: 'session',
   usage: '/status',
 
@@ -432,15 +426,15 @@ export const statusCommand: SlashCommand = {
     const { session, config } = state;
     const runtimeConfig = config.config;
     
-    let content = `## 📊 会话状态\n\n`;
-    content += `| 属性 | 值 |\n`;
-    content += `|------|----|\n`;
-    content += `| Session ID | \`${session.sessionId || 'N/A'}\` |\n`;
-    content += `| 消息数 | ${session.messages.length} |\n`;
-    content += `| 输入 Tokens | ${session.tokenUsage.inputTokens} |\n`;
-    content += `| 输出 Tokens | ${session.tokenUsage.outputTokens} |\n`;
-    content += `| 当前模型 | ${runtimeConfig?.currentModelId || 'N/A'} |\n`;
-    content += `| 思考中 | ${session.isThinking ? '是' : '否'} |\n`;
+    let content = `## status\n\n`;
+    content += `| key | value |\n`;
+    content += `|-----|-------|\n`;
+    content += `| sid | \`${session.sessionId || 'N/A'}\` |\n`;
+    content += `| messages | ${session.messages.length} |\n`;
+    content += `| tokens in | ${session.tokenUsage.inputTokens} |\n`;
+    content += `| tokens out | ${session.tokenUsage.outputTokens} |\n`;
+    content += `| model | ${runtimeConfig?.currentModelId || 'N/A'} |\n`;
+    content += `| thinking | ${session.isThinking ? 'yes' : 'no'} |\n`;
     
     return {
       success: true,
@@ -456,11 +450,11 @@ export const statusCommand: SlashCommand = {
 export const skillsCommand: SlashCommand = {
   name: 'skills',
   aliases: ['sk'],
-  description: '查看和管理 Skills',
+  description: 'List and manage skills',
   category: 'skills',
   usage: '/skills [name|refresh]',
   examples: ['/skills', '/skills commit-message', '/skills refresh'],
-  fullDescription: '列出所有可用的 Skills，查看特定 Skill 详情，或刷新 Skills 列表。',
+  fullDescription: 'List all available skills, view skill details, or refresh the skills list.',
 
   async handler(args: string): Promise<SlashCommandResult> {
     const { getSkillRegistry } = await import('../skills/index.js');
@@ -470,7 +464,7 @@ export const skillsCommand: SlashCommand = {
       return {
         success: false,
         type: 'error',
-        error: 'Skills 系统尚未初始化',
+        error: 'skills system not initialized',
       };
     }
     
@@ -480,14 +474,12 @@ export const skillsCommand: SlashCommand = {
     if (trimmedArgs === 'refresh' || trimmedArgs === 'reload') {
       const result = await registry.refresh();
       
-      let content = `## ✅ Skills 已刷新\n\n`;
-      content += `已加载 **${result.count}** 个 Skills:\n`;
-      content += `- 用户级: ${result.bySource.user}\n`;
-      content += `- 项目级: ${result.bySource.project}\n`;
-      content += `- 内置: ${result.bySource.builtin}\n`;
+      let content = `## skills refreshed\n\n`;
+      content += `loaded **${result.count}** skills: `;
+      content += `${result.bySource.user} user · ${result.bySource.project} project · ${result.bySource.builtin} builtin\n`;
       
       if (result.errors.length > 0) {
-        content += `\n### ⚠️ 加载错误\n`;
+        content += `\n### errors\n\n`;
         for (const err of result.errors) {
           content += `- \`${err.path}\`: ${err.error}\n`;
         }
@@ -506,11 +498,11 @@ export const skillsCommand: SlashCommand = {
           .filter(s => s.name.includes(trimmedArgs) || s.description.toLowerCase().includes(trimmedArgs))
           .slice(0, 5);
         
-        let errorContent = `❌ 未找到 Skill: \`${trimmedArgs}\`\n\n`;
+        let errorContent = `unknown skill: \`${trimmedArgs}\`\n\n`;
         if (suggestions.length > 0) {
-          errorContent += `**相似的 Skills：**\n`;
+          errorContent += `similar:\n`;
           for (const s of suggestions) {
-            errorContent += `- \`${s.name}\` - ${s.description}\n`;
+            errorContent += `- \`${s.name}\` ${s.description}\n`;
           }
         }
         
@@ -518,23 +510,23 @@ export const skillsCommand: SlashCommand = {
       }
       
       // 显示 Skill 详情
-      let content = `## 🧠 ${skill.name}\n\n`;
+      let content = `## ${skill.name}\n\n`;
       content += `${skill.description}\n\n`;
-      content += `| 属性 | 值 |\n`;
-      content += `|------|----|\n`;
-      content += `| 来源 | ${getSourceLabel(skill.source)} |\n`;
-      content += `| 路径 | \`${skill.path}\` |\n`;
-      content += `| 用户可调用 | ${skill.userInvocable ? '是' : '否'} |\n`;
-      content += `| 禁用模型调用 | ${skill.disableModelInvocation ? '是' : '否'} |\n`;
+      content += `| key | value |\n`;
+      content += `|-----|-------|\n`;
+      content += `| source | ${skill.source} |\n`;
+      content += `| path | \`${skill.path}\` |\n`;
+      content += `| invocable | ${skill.userInvocable ? 'yes' : 'no'} |\n`;
+      content += `| no-model | ${skill.disableModelInvocation ? 'yes' : 'no'} |\n`;
       
       if (skill.allowedTools && skill.allowedTools.length > 0) {
-        content += `| 允许工具 | ${skill.allowedTools.join(', ')} |\n`;
+        content += `| tools | ${skill.allowedTools.join(', ')} |\n`;
       }
       if (skill.whenToUse) {
-        content += `\n### 何时使用\n\n${skill.whenToUse}\n`;
+        content += `\n### when to use\n\n${skill.whenToUse}\n`;
       }
       if (skill.argumentHint) {
-        content += `\n### 参数提示\n\n${skill.argumentHint}\n`;
+        content += `\n### args\n\n${skill.argumentHint}\n`;
       }
       
       return { success: true, type: 'info', content };
@@ -547,7 +539,7 @@ export const skillsCommand: SlashCommand = {
       return {
         success: true,
         type: 'info',
-        content: `## 🧠 Skills\n\n暂无可用的 Skills。\n\n在以下目录添加 \`SKILL.md\` 文件:\n- \`~/.claude/skills/\` (用户级)\n- \`~/.clawdcode/skills/\` (用户级)\n- \`.claude/skills/\` (项目级)\n- \`.clawdcode/skills/\` (项目级)`,
+        content: `## skills\n\nno skills found.\n\nadd \`SKILL.md\` files to:\n- \`~/.claude/skills/\` (user)\n- \`~/.clawdcode/skills/\` (user)\n- \`.claude/skills/\` (project)\n- \`.clawdcode/skills/\` (project)`,
       };
     }
     
@@ -562,66 +554,53 @@ export const skillsCommand: SlashCommand = {
       grouped[skill.source].push(skill);
     }
     
-    let content = `## 🧠 Skills (${allSkills.length})\n\n`;
+    let content = `## skills (${allSkills.length})\n\n`;
     
     // 内置 Skills
     if (grouped.builtin.length > 0) {
-      content += `### 📦 内置\n\n`;
+      content += `### builtin\n\n`;
       for (const skill of grouped.builtin) {
-        content += `- \`${skill.name}\` - ${skill.description}\n`;
+        content += `- \`${skill.name}\` ${skill.description}\n`;
       }
       content += '\n';
     }
     
     // 用户 Skills
     if (grouped.user.length > 0) {
-      content += `### 👤 用户级\n\n`;
+      content += `### user\n\n`;
       for (const skill of grouped.user) {
-        const invocable = skill.userInvocable ? ' ⚡' : '';
-        content += `- \`${skill.name}\`${invocable} - ${skill.description}\n`;
+        const tag = skill.userInvocable ? ' *' : '';
+        content += `- \`${skill.name}\`${tag} ${skill.description}\n`;
       }
       content += '\n';
     }
     
     // 项目 Skills
     if (grouped.project.length > 0) {
-      content += `### 📁 项目级\n\n`;
+      content += `### project\n\n`;
       for (const skill of grouped.project) {
-        const invocable = skill.userInvocable ? ' ⚡' : '';
-        content += `- \`${skill.name}\`${invocable} - ${skill.description}\n`;
+        const tag = skill.userInvocable ? ' *' : '';
+        content += `- \`${skill.name}\`${tag} ${skill.description}\n`;
       }
       content += '\n';
     }
     
-    content += `---\n`;
-    content += `💡 使用 \`/skills <name>\` 查看详情 | ⚡ = 用户可调用\n`;
+    content += `\`/skills <name>\` for details · * = invocable\n`;
     
     return { success: true, type: 'info', content };
   },
 };
 
 /**
- * 获取来源标签
- */
-function getSourceLabel(source: string): string {
-  switch (source) {
-    case 'builtin': return '📦 内置';
-    case 'user': return '👤 用户级';
-    case 'project': return '📁 项目级';
-    default: return source;
-  }
-}
-
-/**
  * /hooks - Hooks 管理
  */
 export const hooksCommand: SlashCommand = {
   name: 'hooks',
-  description: '查看和管理 Hooks',
+  description: 'View and manage hooks',
   category: 'hooks',
   usage: '/hooks [status|list]',
   examples: ['/hooks', '/hooks status', '/hooks list'],
-  fullDescription: '查看 Hooks 配置状态和已配置的 Hook 列表。',
+  fullDescription: 'View hooks configuration status and configured hook list.',
 
   async handler(args: string): Promise<SlashCommandResult> {
     const { getHookManager, HookEvent } = await import('../hooks/index.js');
@@ -636,22 +615,21 @@ export const hooksCommand: SlashCommand = {
       const totalHooks = Object.values(counts).reduce((a, b) => a + b, 0);
       const configuredEvents = manager.getConfiguredEvents();
       
-      let content = `## 🪝 Hooks 状态\n\n`;
-      content += `| 属性 | 值 |\n`;
-      content += `|------|----|\n`;
-      content += `| 状态 | ${enabled ? '✅ 启用' : '❌ 禁用'} |\n`;
-      content += `| 已配置 Hooks | ${totalHooks} 个 |\n`;
-      content += `| 事件类型 | ${configuredEvents.length} 种 |\n`;
+      let content = `## hooks\n\n`;
+      content += `| key | value |\n`;
+      content += `|-----|-------|\n`;
+      content += `| status | ${enabled ? 'enabled' : 'disabled'} |\n`;
+      content += `| hooks | ${totalHooks} |\n`;
+      content += `| events | ${configuredEvents.length} |\n`;
       
       if (totalHooks > 0) {
-        content += `\n### 📊 按事件统计\n\n`;
+        content += `\n### by event\n\n`;
         for (const [event, count] of Object.entries(counts)) {
-          content += `- **${event}**: ${count} 个\n`;
+          content += `- **${event}** ${count}\n`;
         }
       }
       
-      content += `\n---\n`;
-      content += `💡 使用 \`/hooks list\` 查看详细配置\n`;
+      content += `\n\`/hooks list\` for full config\n`;
       
       return { success: true, type: 'info', content };
     }
@@ -661,7 +639,7 @@ export const hooksCommand: SlashCommand = {
       const config = manager.getConfig();
       const events = Object.values(HookEvent);
       
-      let content = `## 🪝 Hooks 配置\n\n`;
+      let content = `## hooks config\n\n`;
       
       let hasAny = false;
       for (const event of events) {
@@ -679,26 +657,26 @@ export const hooksCommand: SlashCommand = {
           
           if (matcher.matcher) {
             if (matcher.matcher.tools) {
-              content += `- Tools: \`${matcher.matcher.tools}\`\n`;
+              content += `- tools: \`${matcher.matcher.tools}\`\n`;
             }
             if (matcher.matcher.paths) {
-              content += `- Paths: \`${matcher.matcher.paths}\`\n`;
+              content += `- paths: \`${matcher.matcher.paths}\`\n`;
             }
             if (matcher.matcher.commands) {
-              content += `- Commands: \`${matcher.matcher.commands}\`\n`;
+              content += `- commands: \`${matcher.matcher.commands}\`\n`;
             }
           }
           
-          content += `- Hooks: ${matcher.hooks?.length || 0} 个\n`;
+          content += `- hooks: ${matcher.hooks?.length || 0}\n`;
           content += '\n';
         }
       }
       
       if (!hasAny) {
-        content += `暂无配置的 Hooks。\n\n`;
-        content += `在 \`settings.json\` 中添加 \`hooks\` 配置：\n`;
-        content += `- \`~/.clawdcode/settings.json\` (用户级)\n`;
-        content += `- \`.clawdcode/settings.json\` (项目级)\n`;
+        content += `no hooks configured.\n\n`;
+        content += `add \`hooks\` to settings.json:\n`;
+        content += `- \`~/.clawdcode/settings.json\` (user)\n`;
+        content += `- \`.clawdcode/settings.json\` (project)\n`;
       }
       
       return { success: true, type: 'info', content };
@@ -707,7 +685,156 @@ export const hooksCommand: SlashCommand = {
     return {
       success: false,
       type: 'error',
-      error: `未知子命令: ${trimmedArgs}\n可用: status, list`,
+      error: `unknown subcommand: ${trimmedArgs}\navailable: status, list`,
+    };
+  },
+};
+
+/**
+ * /copy - 复制代码块到剪贴板
+ */
+export const copyCommand: SlashCommand = {
+  name: 'copy',
+  aliases: ['cp'],
+  description: 'Copy code block to clipboard',
+  category: 'general',
+  usage: '/copy [n | list]',
+  examples: ['/copy', '/copy 2', '/copy list'],
+  fullDescription: 'Copy a code block to clipboard. /copy copies the last block. /copy N copies the Nth from end (1=last). /copy list shows all blocks.',
+
+  async handler(args: string): Promise<SlashCommandResult> {
+    const state = getState();
+    const messages = state.session.messages;
+
+    // Extract all code blocks from messages
+    const { parseMarkdown } = await import('../ui/components/markdown/parser.js');
+
+    const codeBlocks: Array<{ content: string; language?: string; filePath?: string }> = [];
+
+    for (const msg of messages) {
+      if (!msg.content) continue;
+      const blocks = parseMarkdown(msg.content);
+      for (const block of blocks) {
+        if (block.type === 'code' && block.content.trim()) {
+          codeBlocks.push({
+            content: block.content,
+            language: block.language,
+            filePath: block.filePath,
+          });
+        }
+      }
+    }
+
+    if (codeBlocks.length === 0) {
+      return {
+        success: false,
+        type: 'error',
+        error: 'no code blocks in conversation',
+      };
+    }
+
+    const trimmedArgs = args.trim().toLowerCase();
+
+    // /copy list - show all blocks
+    if (trimmedArgs === 'list' || trimmedArgs === 'ls') {
+      let content = `${codeBlocks.length} code blocks (newest first)\n\n`;
+      for (let i = codeBlocks.length - 1; i >= 0; i--) {
+        const n = codeBlocks.length - i; // n from end
+        const b = codeBlocks[i];
+        const label = b.filePath || b.language || 'code';
+        const lines = b.content.split('\n').length;
+        const preview = b.content.split('\n')[0].slice(0, 50);
+        content += `  ${n}. ${label} (${lines}L) ${preview}${preview.length >= 50 ? '...' : ''}\n`;
+      }
+      content += `\nuse /copy N to copy`;
+      return { success: true, type: 'info', content };
+    }
+
+    // Determine which block to copy
+    let targetIndex: number;
+
+    if (!trimmedArgs) {
+      targetIndex = codeBlocks.length - 1;
+    } else {
+      const n = parseInt(trimmedArgs, 10);
+      if (isNaN(n) || n < 1) {
+        return {
+          success: false,
+          type: 'error',
+          error: `invalid: ${trimmedArgs}. use /copy [N] or /copy list`,
+        };
+      }
+      targetIndex = codeBlocks.length - n;
+      if (targetIndex < 0) {
+        return {
+          success: false,
+          type: 'error',
+          error: `only ${codeBlocks.length} blocks. use /copy list`,
+        };
+      }
+    }
+
+    const target = codeBlocks[targetIndex];
+
+    // Copy to clipboard
+    try {
+      const { execSync } = await import('child_process');
+      const platform = process.platform;
+
+      if (platform === 'darwin') {
+        execSync('pbcopy', { input: target.content });
+      } else if (platform === 'linux') {
+        try {
+          execSync('xclip -selection clipboard', { input: target.content });
+        } catch {
+          execSync('xsel --clipboard --input', { input: target.content });
+        }
+      } else if (platform === 'win32') {
+        execSync('clip', { input: target.content });
+      } else {
+        throw new Error(`unsupported platform: ${platform}`);
+      }
+    } catch (err) {
+      return {
+        success: false,
+        type: 'error',
+        error: `clipboard: ${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
+
+    // Build confirmation
+    const lines = target.content.split('\n').length;
+    const label = target.filePath || target.language || 'code';
+    const preview = target.content.split('\n')[0].slice(0, 50);
+    const hint = codeBlocks.length > 1 ? ` · ${codeBlocks.length} blocks, /copy list` : '';
+
+    return {
+      success: true,
+      type: 'success',
+      message: `copied ${label} (${lines}L) · ${preview}${preview.length >= 50 ? '...' : ''}${hint}`,
+    };
+  },
+};
+
+/**
+ * /thinking - 切换思考块展开/折叠
+ */
+export const thinkingCommand: SlashCommand = {
+  name: 'thinking',
+  description: 'Toggle thinking blocks expand/collapse',
+  category: 'config',
+  usage: '/thinking',
+  fullDescription: 'Toggle global expand/collapse for all thinking blocks in messages.',
+
+  async handler(): Promise<SlashCommandResult> {
+    const { appActions, getState } = await import('../store/index.js');
+    appActions().toggleShowAllThinking();
+    
+    const expanded = getState().app.showAllThinking;
+    return {
+      success: true,
+      type: 'success',
+      message: `thinking blocks: ${expanded ? 'expanded' : 'collapsed'}`,
     };
   },
 };
@@ -725,4 +852,6 @@ export const builtinCommands: SlashCommand[] = [
   statusCommand,
   skillsCommand,
   hooksCommand,
+  thinkingCommand,
+  copyCommand,
 ];

@@ -74,6 +74,22 @@ When editing files:
 3. If you've introduced errors, fix them.
 4. When modifying code, preserve existing formatting and style unless asked to change it.
 
+# Code block formatting
+
+When showing code from the project, ALWAYS include the file path in the code fence using the format:
+
+\`\`\`language:relative/path/to/file
+code here
+\`\`\`
+
+Examples:
+- \`\`\`typescript:src/utils/helper.ts
+- \`\`\`python:scripts/deploy.py
+- \`\`\`json:package.json
+
+Use paths relative to the project root. This helps the user identify which file the code belongs to.
+Only use plain \`\`\`language when the code is a standalone snippet not tied to any file.
+
 # Language Requirement
 
 Always respond in Chinese (Simplified Chinese). This includes:

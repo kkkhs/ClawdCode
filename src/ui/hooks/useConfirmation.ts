@@ -1,8 +1,12 @@
 /**
  * useConfirmation - 确认对话框状态管理
+ * 
+ * 焦点切换在 show/hide 时同步执行（而非 useEffect），
+ * 以避免 Ink useInput 在 render 与 effect 之间的竞态窗口。
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { focusActions, FocusId } from '../focus/index.js';
 import type { ConfirmationHandler, ConfirmationDetails, ConfirmationResponse } from '../../tools/execution/types.js';
 
 /**
@@ -39,10 +43,13 @@ export const useConfirmation = (): UseConfirmationResult => {
 
   /**
    * 显示确认对话框
+   * 同步切换焦点，确保在下一次 useInput 触发前生效
    */
   const showConfirmation = useCallback(
     (details: ConfirmationDetails): Promise<ConfirmationResponse> => {
       return new Promise((resolve) => {
+        // 同步设置焦点 — 在 React 调度 render 之前就生效
+        focusActions.setFocus(FocusId.CONFIRMATION_PROMPT);
         setConfirmationState({
           isVisible: true,
           details,
@@ -55,11 +62,14 @@ export const useConfirmation = (): UseConfirmationResult => {
 
   /**
    * 处理用户响应
+   * 同步恢复焦点到主输入框
    */
   const handleResponse = useCallback((response: ConfirmationResponse) => {
     if (confirmationState.resolver) {
       confirmationState.resolver(response);
     }
+    // 同步恢复焦点
+    focusActions.setFocus(FocusId.MAIN_INPUT);
     setConfirmationState({
       isVisible: false,
       details: null,

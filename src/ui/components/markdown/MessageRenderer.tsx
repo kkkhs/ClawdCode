@@ -4,12 +4,13 @@
  * 解析 Markdown 并渲染为终端友好的格式
  */
 
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Box, Text } from 'ink'
 import stringWidth from 'string-width'
 import { parseMarkdown } from './parser.js'
 import { themeManager } from '../../themes/index.js'
 import { CodeHighlighter } from './CodeHighlighter.js'
+import { useShowAllThinking } from '../../../store/index.js'
 import type { ParsedBlock } from './types.js'
 
 interface MessageRendererProps {
@@ -42,6 +43,25 @@ export const MessageRenderer: React.FC<MessageRendererProps> = React.memo(
     const theme = themeManager.getTheme()
     const roleStyle = themeManager.getRoleStyle(role)
 
+    // 全局展开/折叠开关（通过 /thinking 命令切换）
+    const showAllThinking = useShowAllThinking()
+
+    // 本地展开/折叠状态
+    // 流式输出时默认展开，完成后自动折叠
+    const [localExpanded, setLocalExpanded] = useState(!!isStreaming)
+
+    // 当流式输出结束时，自动折叠思考块
+    useEffect(() => {
+      if (isStreaming) {
+        setLocalExpanded(true)
+      } else if (thinking) {
+        setLocalExpanded(false)
+      }
+    }, [isStreaming, !!thinking])
+
+    // 最终展开状态：全局开关 OR 本地状态（流式中）
+    const isThinkingExpanded = showAllThinking || localExpanded
+
     // 解析 Markdown（缓存结果）
     const blocks = useMemo(() => parseMarkdown(content), [content])
 
@@ -67,34 +87,67 @@ export const MessageRenderer: React.FC<MessageRendererProps> = React.memo(
       return thinkingBlocks.filter((block) => block.type !== 'empty')
     }, [thinkingBlocks])
 
+    // 计算思考内容的行数（用于折叠摘要）
+    const thinkingLineCount = useMemo(() => {
+      if (!thinking) return 0
+      return thinking.split('\n').filter(l => l.trim()).length
+    }, [thinking])
+
+    // 获取思考内容的首行预览
+    const thinkingPreview = useMemo(() => {
+      if (!thinking) return ''
+      const firstLine = thinking.split('\n').find(l => l.trim()) || ''
+      const maxLen = Math.min(terminalWidth - 30, 60)
+      return firstLine.length > maxLen
+        ? firstLine.slice(0, maxLen) + '...'
+        : firstLine
+    }, [thinking, terminalWidth])
+
+    const prefixOffset = showPrefix && roleStyle ? roleStyle.prefix.length + 1 : 0
+
     return (
       <Box flexDirection="column" marginBottom={1}>
-        {/* 思考过程（如果有） */}
+        {/* 思考过程 */}
         {filteredThinkingBlocks.length > 0 && (
           <Box flexDirection="column" marginBottom={1}>
-            <Box marginBottom={0}>
-              <Text color={theme.colors.text.muted} dimColor>
-                {showPrefix && roleStyle && <Text>{roleStyle.prefix} </Text>}
-                <Text italic>💭 Thinking...</Text>
-              </Text>
-            </Box>
-            <Box
-              flexDirection="column"
-              marginLeft={
-                showPrefix && roleStyle ? roleStyle.prefix.length + 1 : 0
-              }
-              borderStyle="round"
-              borderColor={theme.colors.border.light}
-              paddingX={1}
-            >
-              {filteredThinkingBlocks.map((block, index) => (
-                <Box key={index}>
-                  <Text color={theme.colors.text.muted} dimColor italic>
-                    {block.content}
+            {isThinkingExpanded ? (
+              <>
+                {/* 展开状态：显示完整思考内容 */}
+                <Box marginBottom={0}>
+                  <Text color={theme.colors.text.muted} dimColor>
+                    {showPrefix && roleStyle && <Text>{roleStyle.prefix} </Text>}
+                    <Text italic>thinking...</Text>
                   </Text>
                 </Box>
-              ))}
-            </Box>
+                <Box
+                  flexDirection="column"
+                  marginLeft={prefixOffset}
+                  borderStyle="round"
+                  borderColor={theme.colors.border.light}
+                  paddingX={1}
+                >
+                  {filteredThinkingBlocks.map((block, index) => (
+                    <Box key={index}>
+                      <Text color={theme.colors.text.muted} dimColor italic>
+                        {block.content}
+                      </Text>
+                    </Box>
+                  ))}
+                </Box>
+              </>
+            ) : (
+              /* 折叠状态：显示摘要行 */
+              <Box marginLeft={prefixOffset}>
+                <Text color={theme.colors.text.muted} dimColor>
+                  <Text>▸ </Text>
+                  <Text italic>thought</Text>
+                  <Text> · {thinkingLineCount} lines</Text>
+                  {thinkingPreview && (
+                    <Text> · {thinkingPreview}</Text>
+                  )}
+                </Text>
+              </Box>
+            )}
           </Box>
         )}
 
@@ -113,9 +166,7 @@ export const MessageRenderer: React.FC<MessageRendererProps> = React.memo(
         {/* 流式输出光标指示器 */}
         {isStreaming && (
           <Box
-            marginLeft={
-              showPrefix && roleStyle ? roleStyle.prefix.length + 1 : 0
-            }
+            marginLeft={prefixOffset}
           >
             <Text color={theme.colors.primary}>▌</Text>
           </Box>
@@ -171,6 +222,7 @@ const BlockRenderer: React.FC<BlockRendererProps> = ({
           <CodeBlock
             content={block.content}
             language={block.language}
+            filePath={block.filePath}
             theme={theme}
           />
         ) : block.type === 'heading' ? (
@@ -214,13 +266,14 @@ interface ThemedProps {
 
 /** 代码块 - 使用 CodeHighlighter 进行语法高亮 */
 const CodeBlock: React.FC<
-  { content: string; language?: string } & ThemedProps
-> = ({ content, language }) => {
+  { content: string; language?: string; filePath?: string } & ThemedProps
+> = ({ content, language, filePath }) => {
   // 使用 CodeHighlighter 组件进行语法高亮
   return (
     <CodeHighlighter
       content={content}
       language={language}
+      filePath={filePath}
       showLineNumbers={true}
     />
   )
@@ -287,7 +340,9 @@ const ListItem: React.FC<
         {indentStr}
         <Text color={bulletColor}>{marker || '•'}</Text>{' '}
       </Text>
-      <InlineText content={content} theme={theme} />
+      <Text wrap="wrap">
+        <InlineText content={content} theme={theme} />
+      </Text>
     </Box>
   )
 }
@@ -424,21 +479,52 @@ const Blockquote: React.FC<{ content: string } & ThemedProps> = ({
 }) => (
   <Box>
     <Text color={theme.colors.border.light}>│ </Text>
-    <Text color={theme.colors.text.muted} italic>
+    <Text color={theme.colors.text.muted} italic wrap="wrap">
       {content}
     </Text>
   </Box>
 )
 
-/** 普通文本 - 支持内联格式 */
+/** Tool call 行检测 - 以2+空格开头且含 ✓ 或 ✗ 标记 */
+const TOOLCALL_RE = /^\s{2,}(\S+)\s*(.*?)\s*(✓|✗.*)$/
+
+/** Tool call 输出行 - 紧凑 dim 风格，与正文区分 */
+const ToolCallLine: React.FC<{ content: string } & ThemedProps> = ({
+  content,
+  theme,
+}) => {
+  const m = content.match(TOOLCALL_RE)
+  if (!m) return <Text dimColor>{content}</Text>
+
+  const [, name, args, result] = m
+  const isErr = result.startsWith('✗')
+
+  return (
+    <Box>
+      <Text dimColor color={theme.colors.text.muted}>{'  '}</Text>
+      <Text dimColor color={theme.colors.text.secondary}>{name}</Text>
+      {args ? <Text dimColor color={theme.colors.text.muted}>{' '}{args}</Text> : null}
+      <Text dimColor color={isErr ? theme.colors.error : theme.colors.success}>{' '}{result}</Text>
+    </Box>
+  )
+}
+
+/** 普通文本 - 支持内联格式，tool call 行走专用渲染 */
 const TextBlock: React.FC<{ content: string } & ThemedProps> = ({
   content,
   theme,
-}) => (
-  <Text wrap="wrap">
-    <InlineText content={content} theme={theme} />
-  </Text>
-)
+}) => {
+  // Tool call 行：以空格缩进开头 + ✓/✗ 标记
+  if (TOOLCALL_RE.test(content)) {
+    return <ToolCallLine content={content} theme={theme} />
+  }
+
+  return (
+    <Text wrap="wrap">
+      <InlineText content={content} theme={theme} />
+    </Text>
+  )
+}
 
 /** 标题内联格式渲染 - 去除格式标记但保持文本（因为标题本身已经是粗体） */
 const HeadingInlineText: React.FC<
@@ -452,11 +538,7 @@ const HeadingInlineText: React.FC<
         switch (seg.type) {
           case 'code':
             return (
-              <Text
-                key={i}
-                color={theme.colors.syntax.string}
-                backgroundColor={theme.colors.background.secondary}
-              >
+              <Text key={i} color={theme.colors.accent}>
                 {seg.text}
               </Text>
             )
@@ -507,11 +589,7 @@ const InlineText: React.FC<{ content: string } & ThemedProps> = ({
             )
           case 'code':
             return (
-              <Text
-                key={i}
-                color={theme.colors.syntax.string}
-                backgroundColor={theme.colors.background.secondary}
-              >
+              <Text key={i} color={theme.colors.accent}>
                 {seg.text}
               </Text>
             )

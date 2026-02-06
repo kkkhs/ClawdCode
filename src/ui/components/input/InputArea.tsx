@@ -7,12 +7,13 @@
 
 import React, { useCallback, useState, useMemo, useEffect, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
+import Spinner from 'ink-spinner';
 import { CustomTextInput } from './CustomTextInput.js';
 import { CommandSuggestions } from './CommandSuggestions.js';
 import { themeManager } from '../../themes/index.js';
-import { FocusId } from '../../focus/index.js';
+import { FocusId, focusManager } from '../../focus/index.js';
 import { getCommandCompletions } from '../../../slash-commands/index.js';
-import { useIsThinking, usePendingCommands } from '../../../store/index.js';
+import { useIsThinking, useHasStreamingMessage, usePendingCommands } from '../../../store/index.js';
 import type { CommandSuggestion } from '../../../slash-commands/types.js';
 
 interface InputAreaProps {
@@ -74,6 +75,7 @@ export const InputArea: React.FC<InputAreaProps> = React.memo(
     
     // 自己订阅需要的状态
     const isProcessing = useIsThinking();
+    const hasStreamingMessage = useHasStreamingMessage();
     const pendingCommands = usePendingCommands();
     
     // 计算 placeholder
@@ -239,12 +241,21 @@ export const InputArea: React.FC<InputAreaProps> = React.memo(
     
     // 处理 Tab 和 Escape 键
     useInput((char, key) => {
+      // Imperative focus check — avoids stale React closure
+      if (focusManager.getCurrentFocus() !== FocusId.MAIN_INPUT) return;
       if (key.tab) {
         handleTabComplete();
       } else if (key.escape) {
         handleCloseSuggestions();
       }
     });
+
+    // 计算 thinking 状态文本
+    const thinkingLabel = useMemo(() => {
+      if (!isProcessing) return null;
+      if (hasStreamingMessage) return 'Generating...';
+      return 'Thinking...';
+    }, [isProcessing, hasStreamingMessage]);
 
     return (
       <Box flexDirection="column">
@@ -254,6 +265,19 @@ export const InputArea: React.FC<InputAreaProps> = React.memo(
           selectedIndex={selectedIndex}
           visible={showSuggestions}
         />
+        
+        {/* 思考/生成状态指示器 - 紧贴输入框上方 */}
+        {thinkingLabel && (
+          <Box paddingX={1} marginBottom={0}>
+            <Text color={theme.colors.warning}>
+              <Spinner type="dots" />
+            </Text>
+            <Text color={theme.colors.warning}> {thinkingLabel}</Text>
+            {pendingCommands.length > 0 && (
+              <Text color={theme.colors.text.muted}> · queued: {pendingCommands.length}</Text>
+            )}
+          </Box>
+        )}
         
         {/* 输入框 */}
         <Box

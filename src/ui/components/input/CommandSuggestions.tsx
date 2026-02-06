@@ -16,7 +16,7 @@ interface CommandSuggestionsProps {
   visible: boolean;
 }
 
-const MAX_VISIBLE = 5;
+const MAX_VISIBLE = 10;
 
 /**
  * 命令补全建议组件
@@ -58,22 +58,13 @@ export const CommandSuggestions: React.FC<CommandSuggestionsProps> = ({
   return (
     <Box
       flexDirection="column"
-      marginLeft={2}
-      marginBottom={1}
-      borderStyle="single"
-      borderColor={theme.colors.border.light}
       paddingX={1}
+      marginBottom={0}
     >
-      <Box marginBottom={0}>
-        <Text color={theme.colors.text.muted} dimColor>
-          💡 命令补全 (↑↓ 选择, Tab 补全, Esc 关闭)
-        </Text>
-      </Box>
-      
       {/* 上方省略提示 */}
       {hasMoreAbove && (
         <Text color={theme.colors.text.muted} dimColor>
-          ↑ 还有 {startIndex} 个命令
+          ... {startIndex} more above
         </Text>
       )}
       
@@ -84,8 +75,8 @@ export const CommandSuggestions: React.FC<CommandSuggestionsProps> = ({
         return (
           <Box key={suggestion.command} flexDirection="row">
             {/* 选中指示器 */}
-            <Text color={theme.colors.primary}>
-              {isSelected ? '▶ ' : '  '}
+            <Text color={isSelected ? theme.colors.primary : theme.colors.text.muted}>
+              {isSelected ? '> ' : '  '}
             </Text>
             
             {/* 命令名 */}
@@ -97,17 +88,10 @@ export const CommandSuggestions: React.FC<CommandSuggestionsProps> = ({
             </Text>
             
             {/* 描述 */}
-            <Text color={theme.colors.text.muted}>
-              {' - '}
+            <Text color={theme.colors.text.muted} dimColor={!isSelected}>
+              {' '}
               {suggestion.description}
             </Text>
-            
-            {/* 匹配分数 */}
-            {suggestion.matchScore !== undefined && (
-              <Text color={theme.colors.text.muted} dimColor>
-                {' '}({suggestion.matchScore}%)
-              </Text>
-            )}
           </Box>
         );
       })}
@@ -115,9 +99,14 @@ export const CommandSuggestions: React.FC<CommandSuggestionsProps> = ({
       {/* 下方省略提示 */}
       {hasMoreBelow && (
         <Text color={theme.colors.text.muted} dimColor>
-          ↓ 还有 {suggestions.length - startIndex - MAX_VISIBLE} 个命令
+          ... {suggestions.length - startIndex - MAX_VISIBLE} more below
         </Text>
       )}
+
+      {/* 简洁的操作提示 */}
+      <Text color={theme.colors.text.muted} dimColor>
+        ─ tab · ↑↓ · esc
+      </Text>
     </Box>
   );
 };

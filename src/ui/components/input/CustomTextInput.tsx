@@ -7,7 +7,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { Text, useInput } from 'ink';
 import chalk from 'chalk';
-import { useIsFocused, FocusId } from '../../focus/index.js';
+import { useIsFocused, FocusId, focusManager } from '../../focus/index.js';
 
 interface CustomTextInputProps {
   /** 输入值 */
@@ -111,6 +111,8 @@ export const CustomTextInput: React.FC<CustomTextInputProps> = ({
   // 键盘输入处理
   useInput(
     (input, key) => {
+      // Imperative focus check — avoids stale React closure
+      if (focusManager.getCurrentFocus() !== focusId || disabled) return;
       if (!isActive) return;
 
       const now = Date.now();

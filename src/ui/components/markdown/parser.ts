@@ -6,11 +6,80 @@
 
 import type { ParsedBlock, TableData, InlineSegment } from './types.js';
 
+/** 已知的编程语言标识列表（用于区分 language 和 file path） */
+const KNOWN_LANGUAGES = new Set([
+  'javascript', 'js', 'typescript', 'ts', 'tsx', 'jsx',
+  'python', 'py', 'ruby', 'rb', 'go', 'rust', 'rs',
+  'java', 'kotlin', 'kt', 'scala', 'swift', 'c', 'cpp', 'h',
+  'csharp', 'cs', 'php', 'lua', 'perl', 'r', 'sql',
+  'html', 'css', 'scss', 'sass', 'less',
+  'json', 'yaml', 'yml', 'toml', 'xml', 'ini', 'env',
+  'bash', 'sh', 'zsh', 'fish', 'powershell', 'ps1',
+  'markdown', 'md', 'text', 'txt', 'plain',
+  'diff', 'patch', 'dockerfile', 'makefile', 'cmake',
+  'graphql', 'gql', 'proto', 'protobuf',
+  'vim', 'elixir', 'ex', 'erlang', 'haskell', 'hs',
+  'ocaml', 'ml', 'fsharp', 'clojure', 'lisp', 'scheme',
+  'dart', 'zig', 'nim', 'v', 'wasm', 'solidity', 'sol',
+]);
+
+/**
+ * 解析代码块头部的 language:filepath 标记
+ * 
+ * 支持格式:
+ *   ```typescript                → { language: 'typescript' }
+ *   ```typescript:src/main.tsx   → { language: 'typescript', filePath: 'src/main.tsx' }
+ *   ```src/main.tsx              → { language: 'typescript', filePath: 'src/main.tsx' }
+ *   ```12:30:src/main.tsx        → { language: undefined, filePath: 'src/main.tsx', startLine: 12 }
+ */
+function parseCodeBlockSpec(spec: string | null): { language?: string; filePath?: string; startLine?: number } {
+  if (!spec) return {};
+
+  // Format: startLine:endLine:filepath (e.g., 12:30:src/main.tsx)
+  const lineRefMatch = spec.match(/^(\d+):(\d+):(.+)$/);
+  if (lineRefMatch) {
+    const filePath = lineRefMatch[3];
+    const ext = filePath.split('.').pop()?.toLowerCase();
+    return {
+      language: ext && KNOWN_LANGUAGES.has(ext) ? ext : undefined,
+      filePath,
+      startLine: parseInt(lineRefMatch[1], 10),
+    };
+  }
+
+  // Format: language:filepath (e.g., typescript:src/main.tsx)
+  const colonIdx = spec.indexOf(':');
+  if (colonIdx > 0) {
+    const before = spec.slice(0, colonIdx).toLowerCase();
+    const after = spec.slice(colonIdx + 1);
+    if (KNOWN_LANGUAGES.has(before) && after.length > 0) {
+      return { language: before, filePath: after };
+    }
+  }
+
+  // Plain language (e.g., typescript)
+  if (KNOWN_LANGUAGES.has(spec.toLowerCase())) {
+    return { language: spec.toLowerCase() };
+  }
+
+  // Might be a file path (contains / or .)
+  if (spec.includes('/') || spec.includes('.')) {
+    const ext = spec.split('.').pop()?.toLowerCase();
+    return {
+      language: ext && KNOWN_LANGUAGES.has(ext) ? ext : undefined,
+      filePath: spec,
+    };
+  }
+
+  // Fallback: treat as language
+  return { language: spec };
+}
+
 /**
  * Markdown 模式匹配
  */
 const MARKDOWN_PATTERNS = {
-  codeBlock: /^```(\w+)?\s*$/,
+  codeBlock: /^(\s*)```([^\s]*?)?\s*$/,
   heading: /^(#{1,6})\s+(.+)/,
   ulItem: /^(\s*)([-*+])\s+(.+)/,
   olItem: /^(\s*)(\d+)\.\s+(.+)/,
@@ -41,7 +110,8 @@ export function parseMarkdown(content: string): ParsedBlock[] {
 
   let inCodeBlock = false;
   let codeBlockContent: string[] = [];
-  let codeBlockLang: string | null = null;
+  let codeBlockSpec: ReturnType<typeof parseCodeBlockSpec> = {};
+  let codeBlockIndent = 0; // 代码块开始行的缩进量
 
   let inTable = false;
   let tableHeaders: string[] = [];
@@ -54,18 +124,24 @@ export function parseMarkdown(content: string): ParsedBlock[] {
     // ===== 代码块处理 =====
     if (inCodeBlock) {
       const match = line.match(MARKDOWN_PATTERNS.codeBlock);
-      if (match && !match[1]) {
-        // 代码块结束
+      if (match && !match[2]) {
+        // 代码块结束（match[1]=indent, match[2]=lang spec）
         blocks.push({
           type: 'code',
           content: codeBlockContent.join('\n'),
-          language: codeBlockLang || undefined,
+          language: codeBlockSpec.language,
+          filePath: codeBlockSpec.filePath,
         });
         inCodeBlock = false;
         codeBlockContent = [];
-        codeBlockLang = null;
+        codeBlockSpec = {};
+        codeBlockIndent = 0;
       } else {
-        codeBlockContent.push(line);
+        // 去除代码块开始行的缩进量（处理缩进代码块）
+        const stripped = codeBlockIndent > 0 && line.startsWith(' '.repeat(codeBlockIndent))
+          ? line.slice(codeBlockIndent)
+          : line;
+        codeBlockContent.push(stripped);
       }
       continue;
     }
@@ -83,7 +159,8 @@ export function parseMarkdown(content: string): ParsedBlock[] {
       }
       
       inCodeBlock = true;
-      codeBlockLang = codeMatch[1] || null;
+      codeBlockIndent = codeMatch[1]?.length || 0; // 记录缩进量
+      codeBlockSpec = parseCodeBlockSpec(codeMatch[2] || null);
       continue;
     }
 
@@ -184,7 +261,8 @@ export function parseMarkdown(content: string): ParsedBlock[] {
     blocks.push({
       type: 'code',
       content: codeBlockContent.join('\n'),
-      language: codeBlockLang || undefined,
+      language: codeBlockSpec.language,
+      filePath: codeBlockSpec.filePath,
     });
   }
 
