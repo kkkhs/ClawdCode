@@ -2,9 +2,7 @@
   <img src="https://raw.githubusercontent.com/kkkhs/ClawdCode/main/docs-site/public/logo.svg" alt="ClawdCode Logo" width="120" height="120">
 </p>
 
-<h1 align="center">
-  <span style="font-size: 2em;">🦀</span> ClawdCode
-</h1>
+<h1 align="center">ClawdCode</h1>
 
 <p align="center">
   <strong>An AI-Powered CLI Coding Agent</strong>
@@ -24,17 +22,11 @@
   <a href="#-features">Features</a> •
   <a href="#-installation">Installation</a> •
   <a href="#-quick-start">Quick Start</a> •
-  <a href="#-documentation">Documentation</a> •
-  <a href="#-configuration">Configuration</a>
+  <a href="#-custom-commands">Custom Commands</a> •
+  <a href="#-documentation">Documentation</a>
 </p>
 
 ---
-
-<!--
-<p align="center">
-  <img src="https://raw.githubusercontent.com/kkkhs/ClawdCode/main/docs-site/public/demo.gif" alt="ClawdCode Demo" width="700">
-</p>
--->
 
 ## ✨ Features
 
@@ -44,8 +36,9 @@
 
 ### 🤖 Intelligent Agent
 - Natural language interface for coding tasks
+- **Streaming output** with real-time response
+- **Thinking process** display (DeepSeek R1, etc.)
 - Context-aware project understanding
-- Agentic Loop with tool execution
 
 </td>
 <td width="50%">
@@ -54,6 +47,7 @@
 - **File Operations** - Read, write, and edit files
 - **Code Search** - Glob and Grep integration  
 - **Command Execution** - Safe shell operations
+- **MCP Protocol** - Extensible tool ecosystem
 
 </td>
 </tr>
@@ -64,14 +58,16 @@
 - Fine-grained permission control
 - User confirmation for write operations
 - Configurable allow/deny rules
+- Multiple permission modes
 
 </td>
 <td width="50%">
 
 ### 🎨 Beautiful CLI
 - Ink-powered interactive UI
-- Markdown rendering & code highlighting
-- Multiple themes support
+- Markdown rendering & syntax highlighting
+- **Auto theme detection** (dark/light terminal)
+- **Theme persistence** across sessions
 
 </td>
 </tr>
@@ -83,9 +79,6 @@
 # npm
 npm install -g clawdcode
 
-# yarn
-yarn global add clawdcode
-
 # pnpm
 pnpm add -g clawdcode
 
@@ -95,7 +88,7 @@ bun add -g clawdcode
 
 ## 🚀 Quick Start
 
-### 1️⃣ Configure API Key
+### 1. Configure API Key
 
 ```bash
 # Interactive setup
@@ -103,30 +96,92 @@ clawdcode --init
 
 # Or set environment variable
 export OPENAI_API_KEY=sk-your-api-key
+
+# Or use other OpenAI-compatible providers
+export OPENAI_BASE_URL=https://api.deepseek.com
+export OPENAI_API_KEY=sk-your-deepseek-key
 ```
 
-### 2️⃣ Start Coding
+### 2. Start Coding
 
 ```bash
 # Interactive mode
 clawdcode
 
 # With initial message
-clawdcode "帮我分析这个项目的结构"
+clawdcode "分析这个项目的结构"
 
 # With specific model
-clawdcode --model gpt-4
+clawdcode --model gpt-4o
+
+# Resume previous session
+clawdcode --continue
 ```
 
-### 3️⃣ Use Slash Commands
+### 3. Use Slash Commands
 
+```
+/help      Show all commands
+/clear     Clear conversation
+/compact   Compress context (save tokens)
+/theme     Switch theme (dark/light/ocean/...)
+/status    Show session status
+/mcp       MCP server status
+```
+
+## 📝 Custom Commands
+
+Create project-specific commands in `.clawdcode/commands/` (shareable via Git):
+
+**`.clawdcode/commands/review.md`**
+```markdown
+---
+description: Code review for current changes
+---
+
+Review the current Git changes.
+
+## Changes
+!`git diff --stat HEAD~1`
+
+## Requirements
+1. Summarize what changed
+2. Point out potential issues
+3. Suggest improvements
+```
+
+**`.clawdcode/commands/test.md`**
+```markdown
+---
+description: Run tests and analyze failures
+argument-hint: [test file or pattern]
+allowed-tools:
+  - Bash(npm:*)
+  - Read
+---
+
+Run tests: $ARGUMENTS
+
+If any test fails, analyze the cause and suggest fixes.
+```
+
+Then use them:
 ```bash
-/help      # Show all commands
-/clear     # Clear conversation
-/theme     # Switch theme
-/status    # Show session status
-/mcp       # MCP server status
+/review              # Code review
+/test src/utils      # Run specific tests
 ```
+
+<details>
+<summary><strong>Dynamic Content Syntax</strong></summary>
+
+| Syntax | Description | Example |
+|--------|-------------|---------|
+| `$ARGUMENTS` | All arguments | `/cmd foo bar` → `foo bar` |
+| `$1`, `$2` | Positional args | `/greet Alice` → `$1=Alice` |
+| `` !`cmd` `` | Bash embed | `` !`git branch` `` |
+| `@path` | File reference | `@package.json` |
+
+</details>
 
 ## 📖 Documentation
 
@@ -147,8 +202,10 @@ clawdcode --model gpt-4
 | | 8 | Context Management |
 | **Advanced** | 9 | UI System (Ink) |
 | | 10 | MCP Protocol |
-| | 11 | State Management |
+| | 11 | State Management (Zustand) |
 | | 12a | Slash Commands |
+| | 12b | Interactive Selectors |
+| | 12c | Streaming & Theme Persistence |
 
 </details>
 
@@ -169,7 +226,7 @@ ClawdCode supports multiple configuration methods (in priority order):
   "default": {
     "apiKey": "sk-your-api-key",
     "baseURL": "https://api.openai.com/v1",
-    "model": "gpt-4"
+    "model": "gpt-4o"
   },
   "ui": {
     "theme": "dark"
@@ -199,6 +256,10 @@ ClawdCode supports multiple configuration methods (in priority order):
 | `autoEdit` | ✅ | ✅ | ❓ | Auto-approve writes |
 | `yolo` | ✅ | ✅ | ✅ | Full auto mode |
 | `plan` | ✅ | ❌ | ❌ | Read-only analysis |
+
+```bash
+clawdcode --permission yolo "自动修复所有 lint 错误"
+```
 
 </details>
 
@@ -252,9 +313,11 @@ Rule format: `ToolName(pattern)`
 Usage: clawdcode [options] [message]
 
 Options:
-  --api-key          OpenAI API key
-  --base-url         OpenAI API base URL
-  --model            Model to use (default: gpt-4)
+  --api-key, -k      OpenAI API key
+  --base-url, -b     OpenAI API base URL
+  --model, -m        Model to use (default: gpt-4o)
+  --permission, -p   Permission mode (default/autoEdit/yolo/plan)
+  --theme, -t        Color theme (dark/light/ocean/forest/sunset)
   --continue, -c     Resume previous session
   --debug, -d        Enable debug mode
   --init             Create default config file
@@ -274,11 +337,11 @@ clawdcode "帮我修复 TypeScript 类型错误"
 # Create a new feature
 clawdcode "添加一个用户登录功能"
 
-# Resume previous session
-clawdcode --continue
+# Code review with auto-read permission
+clawdcode --permission plan "review 最近的代码改动"
 
-# Debug mode
-clawdcode --debug "为什么这个测试失败了"
+# Use DeepSeek for cost-effective coding
+clawdcode --base-url https://api.deepseek.com --model deepseek-chat "重构这个函数"
 ```
 
 ## 🔧 Development
@@ -301,14 +364,15 @@ bun run build
 bun run typecheck
 ```
 
-### Release & Publish
+## 🤝 Contributing
 
-This project uses [release-please](https://github.com/google-github-actions/release-please-action) for automated releases.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-**Commit Convention:**
-- `feat:` → minor version
-- `fix:` → patch version
-- `feat!:` or `BREAKING CHANGE` → major version
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feat/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feat/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
