@@ -7,14 +7,16 @@
 Slash Commands 是以 `/` 开头的快捷命令，让用户可以快速执行常用操作：
 
 ```plaintext
-/help      - 显示帮助信息
-/clear     - 清除对话历史
-/compact   - 手动压缩上下文
-/theme     - 切换主题
-/model     - 管理模型配置
-/mcp       - 查看 MCP 状态
-/status    - 显示会话状态
-/version   - 显示版本信息
+/help      - Show available commands
+/clear     - Clear conversation history
+/compact   - Compact context manually
+/theme     - Switch theme
+/model     - Manage model configuration
+/mcp       - Show MCP server status
+/status    - Show session status
+/version   - Show version info
+/copy      - Copy code block to clipboard
+/thinking  - Toggle thinking block expansion
 ```
 
 ## 12a.2 类型定义
@@ -224,28 +226,29 @@ export function getFuzzyCommandSuggestions(input: string): CommandSuggestion[] {
 
 ## 12a.5 内置命令
 
+> **风格指南**：所有内置命令输出采用简洁英文，无 emoji，geek style。
+
 ### /help - 帮助命令
 
 ```typescript
 export const helpCommand: SlashCommand = {
   name: 'help',
   aliases: ['?', 'h'],
-  description: '显示所有可用命令',
+  description: 'Show available commands',
   category: 'general',
 
   async handler(args: string): Promise<SlashCommandResult> {
     // 查看特定命令的帮助
     if (args.trim()) {
       const cmd = getCommand(args.trim());
-      if (cmd) {
-        // 返回命令详情
-      }
+      if (cmd) { /* 返回命令详情 */ }
     }
     
-    // 按分类显示所有命令
-    const commands = getRegisteredCommands();
-    const grouped = groupByCategory(commands);
-    // ...
+    // 按分类显示所有命令（简洁英文分类名）
+    const categoryNames: Record<string, string> = {
+      general: 'General', session: 'Session', config: 'Config',
+      mcp: 'MCP', custom: 'Custom',
+    };
   },
 };
 ```
@@ -256,12 +259,12 @@ export const helpCommand: SlashCommand = {
 export const clearCommand: SlashCommand = {
   name: 'clear',
   aliases: ['cls'],
-  description: '清除对话历史和屏幕',
+  description: 'Clear conversation history',
   category: 'session',
 
   async handler(): Promise<SlashCommandResult> {
     sessionActions().clearMessages();
-    return { success: true, message: '✓ 已清除对话历史' };
+    return { success: true, message: 'conversation cleared' };
   },
 };
 ```
@@ -272,22 +275,43 @@ export const clearCommand: SlashCommand = {
 export const themeCommand: SlashCommand = {
   name: 'theme',
   aliases: ['t'],
-  description: '显示或切换主题',
+  description: 'Show or switch theme',
   category: 'config',
 
   async handler(args: string): Promise<SlashCommandResult> {
-    const trimmedArgs = args.trim().toLowerCase();
-    const availableThemes = themeManager.getAvailableThemes();
-    
-    if (trimmedArgs) {
-      if (availableThemes.includes(trimmedArgs)) {
-        themeManager.setTheme(trimmedArgs);
-        return { success: true, message: `✓ 主题已切换为 ${trimmedArgs}` };
-      }
-      return { success: false, error: `未知主题: ${trimmedArgs}` };
-    }
-    
-    // 显示当前主题和可用主题列表
+    // ...
+  },
+};
+```
+
+### /copy - 复制代码块
+
+```typescript
+export const copyCommand: SlashCommand = {
+  name: 'copy',
+  aliases: ['cp'],
+  description: 'Copy code block to clipboard',
+  usage: '/copy [n | list]',
+  category: 'general',
+};
+```
+
+- `/copy` — 复制最后一个代码块
+- `/copy N` — 复制倒数第 N 个代码块
+- `/copy list` — 列出所有代码块供选择
+
+### /thinking - 思考块展开
+
+```typescript
+export const thinkingCommand: SlashCommand = {
+  name: 'thinking',
+  description: 'Toggle thinking block expansion',
+  category: 'general',
+
+  async handler(): Promise<SlashCommandResult> {
+    appActions().toggleShowAllThinking();
+    const current = getState().showAllThinking;
+    return { success: true, message: current ? 'thinking: expanded' : 'thinking: collapsed' };
   },
 };
 ```
@@ -560,14 +584,15 @@ if (customCmdResult.count > 0) {
 
 ### 命令补全建议
 
-输入 `/` 开头时，自动显示模糊匹配的命令建议：
+输入 `/` 开头时，自动显示模糊匹配的命令建议。采用极简风格，无边框无 emoji：
 
 ```
-┌─────────────────────────────────────────┐
-│ 💡 命令补全 (↑↓ 选择, Tab 补全, Esc 关闭) │
-│ ▶ /help - 显示所有可用命令              │
-│   /history - 显示命令历史               │
-└─────────────────────────────────────────┘
+  ... 2 more above
+  > /help - Show available commands
+    /history - Show command history
+    /theme - Show or switch theme
+  ... 3 more below
+  ─ tab · ↑↓ · esc
 ╭──────────────────────────────────────────╮
 │ > /hel                                   │
 ╰──────────────────────────────────────────╯
@@ -587,7 +612,7 @@ if (customCmdResult.count > 0) {
 ```typescript
 // src/ui/components/input/CommandSuggestions.tsx
 
-const MAX_VISIBLE = 5;
+const MAX_VISIBLE = 10;  // 默认显示 10 个
 
 export const CommandSuggestions: React.FC<CommandSuggestionsProps> = ({
   suggestions,
@@ -600,7 +625,6 @@ export const CommandSuggestions: React.FC<CommandSuggestionsProps> = ({
       return { displaySuggestions: suggestions, startIndex: 0 };
     }
 
-    // 窗口起始位置，让选中项居中
     let start = Math.max(0, selectedIndex - Math.floor(MAX_VISIBLE / 2));
     if (start + MAX_VISIBLE > suggestions.length) {
       start = suggestions.length - MAX_VISIBLE;
@@ -790,11 +814,18 @@ bun run dev
    - 相同的 Frontmatter 格式
    - 相同的动态内容语法
 
-## 12a.11 TODO
+## 12a.11 已实现的新功能
+
+- [x] `/copy` 命令 — 复制代码块到剪贴板，支持 `/copy list` 选择
+- [x] `/thinking` 命令 — 全局切换思考块展开/折叠
+- [x] `sendToAgent` — 自定义命令结果可自动发送给 Agent 执行
+- [x] 命令建议 UI 极简化 — 无 emoji、`MAX_VISIBLE=10`、geek style
+- [x] 内置命令输出英文化 — 所有输出简洁英文
+
+## 12a.12 TODO
 
 以下功能待后续实现：
 
 - [ ] SlashCommand 工具（让 AI 调用自定义命令）
 - [ ] /git 命令（AI Code Review、智能 Commit）
 - [ ] /init 命令（生成 CLAWDCODE.md）
-- [ ] 命令自动补全 UI（输入时显示建议）

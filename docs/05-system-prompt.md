@@ -99,6 +99,7 @@ export async function buildSystemPrompt(
 5. **语言要求** - 中文响应
 6. **工具使用** - 并行调用策略
 7. **代码引用** - 格式规范
+8. **代码块格式** - `language:filepath` 路径标注
 
 ### 5.3.2 身份定义与安全边界
 
@@ -225,9 +226,33 @@ export function createPlanModeReminder(userMessage: string): string {
 }
 ```
 
-## 5.6 项目配置文件
+## 5.6 代码块文件路径指令
 
-### 5.6.1 CLAWDCODE.md
+系统提示词中包含一段指令，要求 AI 在展示项目代码时使用 `language:filepath` 格式：
+
+```typescript
+// 在 DEFAULT_SYSTEM_PROMPT 中
+`# Code block formatting
+
+When showing code from the project, ALWAYS include the file path in the code fence:
+
+\`\`\`language:relative/path/to/file
+code here
+\`\`\`
+
+Examples:
+- \`\`\`typescript:src/utils/helper.ts
+- \`\`\`python:scripts/deploy.py
+
+Use paths relative to the project root.
+Only use plain \`\`\`language when the code is a standalone snippet not tied to any file.`
+```
+
+**作用**：配合 Markdown 解析器的 `parseCodeBlockSpec` 函数，UI 层自动提取文件路径并在代码块头部展示。
+
+## 5.7 项目配置文件
+
+### 5.7.1 CLAWDCODE.md
 
 项目级配置文件，追加到系统提示词末尾：
 
@@ -252,7 +277,7 @@ src/
 - 所有 API 响应使用 camelCase
 ```
 
-## 5.7 测试方法
+## 5.8 测试方法
 
 ### 运行提示词系统测试
 
@@ -297,7 +322,7 @@ bun run test:prompts
 
 ---
 
-## 5.8 本章实现
+## 5.9 本章实现
 
 1. **默认系统提示词** (`src/prompts/default.ts`)
    - 身份定义、安全边界、输出风格

@@ -305,15 +305,17 @@ Agent 调用 Bash 工具
 | 格式     | 语法             | 渲染组件/函数   |
 | -------- | ---------------- | --------------- |
 | 代码块   | \`\`\`lang\`\`\` | CodeHighlighter |
+| 代码块+路径 | \`\`\`lang:path\`\`\` | CodeHighlighter (显示 filePath) |
 | 表格     | \| col \|        | TableRenderer   |
 | 标题     | # ## ###         | Heading         |
 | 有序列表 | 1. item          | ListItem        |
 | 无序列表 | - item           | ListItem        |
 | 粗体     | **text**         | InlineText      |
 | 斜体     | _text_           | InlineText      |
-| 内联代码 | \`code\`         | InlineText      |
+| 内联代码 | \`code\`         | InlineText (accent color, 无背景色) |
 | 删除线   | ~~text~~         | InlineText      |
 | 链接     | [text](url)      | InlineText      |
+| Tool Call | `  ToolName args ✓` | ToolCallLine (dim 样式) |
 
 ### 内联格式渲染
 
@@ -350,25 +352,83 @@ const actualWidth = stringWidth(stripMarkdownForWidth(content))
 
 ```typescript
 const MARKDOWN_PATTERNS = {
-  codeBlock: /^```(\w+)?\s*$/,
-  heading: /^ *(#{1,4}) +(.+)/,
-  ulItem: /^([ \t]*)([-*+]) +(.+)/,
-  olItem: /^([ \t]*)(\d+)\. +(.+)/,
-  hr: /^ *([-*_] *){3,} *$/,
+  codeBlock: /^(\s*)```([^\s]*?)?\s*$/,  // 支持缩进代码块
+  heading: /^(#{1,6})\s+(.+)/,
+  ulItem: /^(\s*)([-*+])\s+(.+)/,
+  olItem: /^(\s*)(\d+)\.\s+(.+)/,
+  hr: /^[-*_]{3,}\s*$/,
   table: /^\|(.+)\|$/,
+  blockquote: /^>\s*(.*)$/,
 } as const
 
 interface ParsedBlock {
-  type: 'text' | 'code' | 'heading' | 'table' | 'list' | 'hr' | 'empty'
+  type: 'text' | 'code' | 'heading' | 'table' | 'list' | 'hr' | 'empty' | 'blockquote'
   content: string
   language?: string
+  filePath?: string    // 代码块关联的文件路径
   level?: number
   listType?: 'ul' | 'ol'
+  marker?: string
+  indent?: number
 }
+```
 
-function parseMarkdown(content: string): ParsedBlock[] {
-  // 解析逻辑...
+#### 代码块头部解析
+
+解析器支持多种代码块标记格式，自动提取语言和文件路径：
+
+```typescript
+// parseCodeBlockSpec 支持的格式：
+// ```typescript               → { language: 'typescript' }
+// ```typescript:src/main.tsx  → { language: 'typescript', filePath: 'src/main.tsx' }
+// ```src/main.tsx             → { language: 'typescript', filePath: 'src/main.tsx' }
+// ```12:30:src/main.tsx       → { filePath: 'src/main.tsx', startLine: 12 }
+```
+
+#### 缩进代码块
+
+解析器支持列表内的缩进代码块，自动检测和去除缩进：
+
+```typescript
+// 记录代码块开始行的缩进量
+codeBlockIndent = codeMatch[1]?.length || 0;
+
+// 去除缩进后保存内容
+const stripped = codeBlockIndent > 0 && line.startsWith(' '.repeat(codeBlockIndent))
+  ? line.slice(codeBlockIndent) : line;
+```
+
+### Tool Call 行渲染
+
+Agent 执行工具时，tool call 信息以紧凑 dim 样式展示，与正文形成视觉区分：
+
+```typescript
+/** Tool call 行检测 */
+const TOOLCALL_RE = /^\s{2,}(\S+)\s*(.*?)\s*(✓|✗.*)$/
+
+/** Tool call 输出行 - dim 风格 */
+const ToolCallLine: React.FC<{ content: string } & ThemedProps> = ({ content, theme }) => {
+  const m = content.match(TOOLCALL_RE)
+  const [, name, args, result] = m!
+  const isErr = result.startsWith('✗')
+
+  return (
+    <Box>
+      <Text dimColor color={theme.colors.text.secondary}>{name}</Text>
+      <Text dimColor color={theme.colors.text.muted}> {args}</Text>
+      <Text dimColor color={isErr ? theme.colors.error : theme.colors.success}> {result}</Text>
+    </Box>
+  )
 }
+```
+
+**显示效果**：
+
+```
+  Read src/file.tsx ✓
+  Bash git status --porcelain ✓
+  Glob *.diff ✓
+  Write src/new.ts ✗ permission denied
 ```
 
 ## 9.6 CodeHighlighter - 代码高亮
@@ -392,6 +452,28 @@ function highlightLine(line: string, language?: string): React.ReactNode {
     return <Text>{line}</Text>;
   }
 }
+```
+
+### 代码块文件路径与复制提示
+
+代码块头部显示语言和文件路径，右侧显示 `/copy` 提示：
+
+```
+┌ typescript:src/utils/helper.ts ──────────── /copy ┐
+│  1 │ export function helper() {                    │
+│  2 │   return true;                                │
+│  3 │ }                                             │
+└───────────────────────────────────────────────────┘
+```
+
+```typescript
+// CodeHighlighter 头部渲染
+<Box justifyContent="space-between">
+  <Text color={theme.colors.accent}>
+    {language}{filePath ? `:${filePath}` : ''}
+  </Text>
+  <Text dimColor>/copy</Text>
+</Box>
 ```
 
 ### 性能优化
@@ -484,40 +566,72 @@ export const themeManager = new ThemeManager()
 
 ## 9.8 确认对话框
 
+确认对话框采用**内联渲染**（显示在输入框上方），而非全屏接管，保持消息上下文可见：
+
 ```typescript
-export const ConfirmationPrompt: React.FC<ConfirmationPromptProps> = ({
-  details,
-  onResponse,
-}) => {
-  const currentFocus = useCurrentFocus();
-  const isFocused = currentFocus === FocusId.CONFIRMATION_PROMPT;
+// ClawdInterface.tsx 主布局
+<Box flexDirection="column">
+  <MessageList />
+  
+  {/* 内联在输入框上方 */}
+  {confirmationState.isVisible && (
+    <ConfirmationPrompt details={confirmationState.details} onResponse={handleResponse} />
+  )}
+  
+  <InputArea onSubmit={handleSubmit} />
+  <ChatStatusBar />
+</Box>
+```
 
-  useInput(
-    (input, key) => {
-      if (key.escape) {
-        onResponse({ approved: false, reason: '用户取消' });
-        return;
-      }
-      const lowerInput = input.toLowerCase();
-      if (lowerInput === 'y') {
-        onResponse({ approved: true, scope: 'once' });
-      } else if (lowerInput === 's') {
-        onResponse({ approved: true, scope: 'session' });
-      } else if (lowerInput === 'n') {
-        onResponse({ approved: false, reason: '用户拒绝' });
-      }
-    },
-    { isActive: isFocused }
-  );
+### 确认组件样式
 
-  return (
-    <Box flexDirection="column" borderStyle="round" borderColor="yellow">
-      <Text bold color="yellow">🔔 Confirmation Required</Text>
-      <Text>{details.message}</Text>
-      {/* 选项 */}
-    </Box>
-  );
-};
+```
+? Bash · No matching rule, requires confirmation
+  Command: git rm -rf .cache
+  This operation will execute system commands
+
+  > allow  (y)
+    always  (a)
+    deny  (n)
+```
+
+- 工具名 + 原因显示在标题行
+- 命令/文件路径以 accent 高亮
+- 上下箭头选择 + `y`/`a`/`n` 快捷键
+
+### 焦点同步机制
+
+确认对话框的焦点切换在 `useConfirmation` hook 中**同步执行**（非 `useEffect`），避免 Ink `useInput` 在 render 与 effect 之间的竞态：
+
+```typescript
+// useConfirmation.ts
+const showConfirmation = useCallback((details) => {
+  return new Promise((resolve) => {
+    // 同步设置焦点 — 在 React 调度 render 之前就生效
+    focusActions.setFocus(FocusId.CONFIRMATION_PROMPT);
+    setConfirmationState({ isVisible: true, details, resolver: resolve });
+  });
+}, []);
+
+const handleResponse = useCallback((response) => {
+  confirmationState.resolver?.(response);
+  // 同步恢复焦点
+  focusActions.setFocus(FocusId.MAIN_INPUT);
+  setConfirmationState({ isVisible: false, details: null, resolver: null });
+}, []);
+```
+
+### 命令式焦点检查
+
+所有 `useInput` handler 使用 `focusManager.getCurrentFocus()` 做命令式检查，避免 React state 闭包过期：
+
+```typescript
+// 所有 useInput handler 统一模式
+useInput((input, key) => {
+  if (focusManager.getCurrentFocus() !== FocusId.CONFIRMATION_PROMPT) return;
+  // ...处理输入
+});
+```
 ```
 
 ## 9.9 自定义 Hooks
@@ -579,13 +693,21 @@ export const useCommandHistory = () => {
 
 ### 坑 2：Ink useInput 冲突
 
-**问题**：多个组件同时使用 `useInput` 会产生冲突。
+**问题**：多个组件同时使用 `useInput` 会产生冲突，尤其是确认对话框和输入框之间。
 
-**解决方案**：使用 `isActive` 参数控制：
+**初始方案**：使用 `isActive` 参数控制，但依赖 React state，存在闭包过期问题。
+
+**最终方案**：命令式焦点检查 + 同步焦点切换：
 
 ```typescript
-useInput((input) => { ... }, { isActive: isFocused });
+// 不再依赖 React state 的 isActive
+useInput((input) => {
+  if (focusManager.getCurrentFocus() !== myFocusId) return;
+  // ...处理输入
+});
 ```
+
+`useConfirmation` 在 `showConfirmation` / `handleResponse` 中**同步**调用 `focusActions.setFocus()`，在 React 调度渲染之前生效。
 
 ### 坑 3：代码高亮性能问题
 
@@ -738,14 +860,21 @@ bun run start "分别用 Python、Go、Rust 写一个 Hello World"
 
 ## 本章新增功能清单
 
-| 功能          | CLI 参数                        | 说明                               |
+| 功能          | CLI 参数 / 命令                 | 说明                               |
 | ------------- | ------------------------------- | ---------------------------------- |
 | 主题切换      | `--theme <name>` 或 `-t <name>` | 切换 UI 颜色主题                   |
 | Markdown 渲染 | 自动                            | 代码块、表格、列表、标题、引用     |
-| 内联格式      | 自动                            | **粗体**、_斜体_、`代码`、~~删除~~ |
+| 内联格式      | 自动                            | **粗体**、_斜体_、`代码`(accent)、~~删除~~ |
 | 代码高亮      | 自动                            | 140+ 语言语法高亮                  |
+| 代码块路径    | 自动                            | 显示 `language:filepath` 文件路径  |
+| 代码块复制    | `/copy [n]` `/copy list`        | 一键复制代码块到剪贴板             |
 | 行号显示      | 自动                            | 代码块显示行号                     |
 | CJK 对齐      | 自动                            | 表格正确处理中文宽度               |
+| Thinking 折叠 | `/thinking`                     | 思考块完成后自动折叠，支持手动展开  |
+| Tool Call 展示 | 自动                           | 紧凑 dim 样式展示工具调用过程       |
+| 内联确认      | 自动                            | 权限确认内联在输入框上方            |
+| 拒绝即停      | 自动                            | 用户拒绝权限后 Agent 立即停止       |
+| Ctrl+C 中断   | Ctrl+C                          | 正确中断流式输出和思考过程           |
 
 ---
 
@@ -753,13 +882,18 @@ bun run start "分别用 Python、Go、Rust 写一个 Hello World"
 
 1. **React + Ink**：声明式 CLI UI，复用 React 生态
 2. **Flexbox 布局**：终端中使用现代布局系统
-3. **焦点管理**：解决多组件键盘监听冲突
+3. **焦点管理**：命令式焦点检查 + 同步焦点切换，解决多组件键盘冲突
 4. **性能优化**：智能截断大代码块（只渲染可见行）
 5. **主题系统**：5 个预设主题，支持自定义扩展
-6. **Markdown 渲染**：完整支持常用格式（标题、列表、表格、代码块）
-7. **内联格式**：支持粗体、斜体、代码、删除线、链接
+6. **Markdown 渲染**：完整支持常用格式（标题、列表、表格、代码块、引用）
+7. **内联格式**：支持粗体、斜体、代码（accent 无背景）、删除线、链接
 8. **CJK 字符支持**：使用 `string-width` 正确计算中文等宽字符的显示宽度
 9. **lowlight 语法高亮**：基于 highlight.js，支持 140+ 语言
+10. **代码块路径**：解析 `language:filepath` 格式，UI 头部显示文件路径
+11. **Tool Call 展示**：紧凑 dim 样式 `ToolCallLine` 组件，与正文视觉区分
+12. **Thinking 折叠**：思考块完成后自动折叠，`/thinking` 全局切换
+13. **内联确认**：权限确认对话框内联在输入框上方，不中断消息阅读
+14. **AbortController**：Ctrl+C 正确中断流式输出和 Agent 循环
 
 ---
 

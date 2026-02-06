@@ -636,30 +636,84 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
 
 **CLI `--theme` 参数**会覆盖上述所有，但只在当前会话有效。
 
-## 12c.7 修改的文件
+## 12c.7 Ctrl+C 中断机制
+
+使用 `AbortController` 实现完整的流式输出和 Agent 中断：
+
+```typescript
+// ClawdInterface.tsx
+const abortControllerRef = useRef<AbortController | null>(null);
+
+// Ctrl+C 中断
+useCtrlCHandler({
+  onInterrupt: () => {
+    abortControllerRef.current?.abort();
+    streamUpdaterRef.current?.clear();
+    sessionActions().finishStreamingMessage(streamingMessageIdRef.current);
+  },
+});
+```
+
+- Agent 端在每次工具调用前检查 `signal.aborted`
+- Stream 回调中使用 abort guard 跳过已中断的回调
+
+## 12c.8 Thinking 折叠与展开
+
+思考块在流式输出完成后自动折叠：
+
+```typescript
+const [localExpanded, setLocalExpanded] = useState(true);
+useEffect(() => {
+  if (!hasStreamingMessage) setLocalExpanded(false);
+}, [hasStreamingMessage]);
+const isThinkingExpanded = showAllThinking || localExpanded;
+```
+
+- 折叠态显示：`▸ thought · N lines · preview...`
+- `/thinking` 命令切换全局 `showAllThinking` 状态
+
+## 12c.9 Status Bar 优化
+
+- Theme 名使用 accent 色
+- Session ID 完整显示（不截断）+ info 色 dimColor
+
+## 12c.10 Tool Call 显示
+
+Agent 执行工具时，`onToolCallStart` / `onToolResult` 回调追加紧凑日志到流式消息。`ToolCallLine` 组件以 dim 样式渲染，与正文视觉区分：
+
+```
+  Read src/file.tsx ✓
+  Bash git status ✓
+  Write src/new.ts ✗ permission denied
+```
+
+## 12c.11 修改的文件
 
 | 文件 | 说明 |
 |------|------|
 | `src/agent/types.ts` | 添加 `StreamCallbacks` 类型 |
-| `src/agent/Agent.ts` | 传递流式回调给 ChatService |
+| `src/agent/Agent.ts` | signal 检查、连续失败检测、拒绝即停 |
 | `src/services/ChatService.ts` | 实现流式请求处理 |
-| `src/store/types.ts` | 添加 `thinking`、`isStreaming` 字段 |
+| `src/store/types.ts` | 添加 `thinking`、`isStreaming`、`showAllThinking` 字段 |
 | `src/store/slices/sessionSlice.ts` | 添加流式消息管理 actions |
-| `src/store/selectors.ts` | 添加细粒度消息选择器 |
-| `src/ui/components/ClawdInterface.tsx` | 节流更新、状态隔离 |
-| `src/ui/components/input/InputArea.tsx` | 自管理状态和命令历史 |
-| `src/ui/components/layout/MessageList.tsx` | 新增，优化消息列表渲染 |
-| `src/ui/components/layout/ChatStatusBar.tsx` | 自订阅状态 |
-| `src/ui/components/markdown/MessageRenderer.tsx` | 支持思考过程和流式光标 |
+| `src/store/slices/appSlice.ts` | showAllThinking state |
+| `src/store/selectors.ts` | 添加细粒度消息选择器、useShowAllThinking |
+| `src/ui/components/ClawdInterface.tsx` | AbortController、tool call display、内联确认 |
+| `src/ui/components/input/InputArea.tsx` | Thinking indicator 上方显示 |
+| `src/ui/components/input/CommandSuggestions.tsx` | 极简化、MAX_VISIBLE=10 |
+| `src/ui/components/layout/ChatStatusBar.tsx` | 颜色修正、sid 完整显示 |
+| `src/ui/components/markdown/MessageRenderer.tsx` | Thinking 折叠、ToolCallLine |
+| `src/ui/components/markdown/CodeHighlighter.tsx` | filePath 显示、/copy 提示 |
+| `src/ui/components/markdown/parser.ts` | parseCodeBlockSpec、缩进代码块 |
+| `src/ui/components/dialog/ConfirmationPrompt.tsx` | 内联极简风格 |
+| `src/ui/hooks/useConfirmation.ts` | 同步焦点切换 |
 | `src/ui/themes/ThemeManager.ts` | 添加颜色模式检测和初始化逻辑 |
 | `src/ui/themes/types.ts` | 添加 `ColorMode` 类型 |
 | `src/config/ConfigManager.ts` | 添加 `getTheme`、`saveTheme` 方法 |
-| `src/config/types.ts` | 更新主题配置 schema |
-| `src/cli/config.ts` | 移除 `--theme` 默认值 |
-| `src/main.tsx` | 更新主题初始化流程 |
-| `src/ui/App.tsx` | 移除重复的主题设置 |
+| `src/slash-commands/builtinCommands.ts` | /copy、/thinking、英文化 |
+| `src/prompts/default.ts` | 代码块路径指令 |
 
-## 12c.8 技术亮点
+## 12c.12 技术亮点
 
 1. **流式输出**
    - OpenAI SDK 原生流式 API
@@ -680,12 +734,25 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
    - `patchConsole: false` 减少 Ink 闪烁
    - 注意：iTerm2 可能仍有闪烁，推荐使用 Terminal.app 或 Alacritty
 
-## 12c.9 测试方法
+5. **AbortController 中断**
+   - Ctrl+C 正确中断流式输出和 Agent 循环
+   - Stream 回调 abort guard 防止对已中断消息的更新
+
+6. **Thinking 自动折叠**
+   - 流式中展开，完成后自动折叠
+   - `/thinking` 全局切换
+
+7. **Tool Call 紧凑展示**
+   - dim 样式与正文视觉区分
+   - `ToolCallLine` 组件正则匹配渲染
+
+## 12c.13 测试方法
 
 ### 测试流式输出
 
 1. 发送一条消息，观察响应是否逐字显示
-2. 使用支持思考过程的模型（如 DeepSeek R1），观察是否显示 💭 思考过程
+2. 使用支持思考过程的模型（如 DeepSeek R1），观察是否显示思考过程
+3. 思考完成后应自动折叠，输入 `/thinking` 可展开全部
 
 ### 测试主题持久化
 

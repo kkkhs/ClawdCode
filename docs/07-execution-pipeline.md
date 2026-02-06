@@ -275,7 +275,7 @@ export class HookStage implements PipelineStage {
 
 ### 7.3.4 Stage 4: Confirmation（用户确认）
 
-请求用户确认危险操作：
+请求用户确认危险操作。确认对话框**内联渲染**在输入框上方，不中断消息列表的浏览。
 
 ```typescript
 // src/tools/execution/stages/ConfirmationStage.ts
@@ -312,6 +312,33 @@ export class ConfirmationStage implements PipelineStage {
       this.sessionApprovals.add(execution._internal.permissionSignature!);
     }
   }
+}
+```
+
+#### 用户拒绝后的行为
+
+当用户在确认对话框中选择 **deny** 时，Agent 循环会**立即终止**，不再继续思考或执行后续工具调用：
+
+```typescript
+// Agent.ts executeLoop 中
+const result = await this.executeToolCall(toolCall, context);
+
+// 用户拒绝 → 立即退出循环
+if (!result.success && result.error?.includes('User rejected')) {
+  return { success: true, metadata: { turnsCount, toolCallsCount } };
+}
+```
+
+#### 连续失败检测
+
+Agent 还内置了连续工具失败检测（`MAX_CONSECUTIVE_FAILURES = 3`）。当同一工具连续失败 3 次后，会注入系统消息提醒 LLM 停止重试：
+
+```typescript
+if (consecutiveToolFailures >= MAX_CONSECUTIVE_FAILURES) {
+  messages.push({
+    role: 'system',
+    content: 'Multiple tool calls have failed. Stop retrying and inform the user.',
+  });
 }
 ```
 
@@ -602,49 +629,37 @@ export interface ConfirmationResponse {
 
 ### 7.6.2 UI 确认组件
 
-```typescript
-// src/ui/components/ConfirmationPrompt.tsx
+确认对话框采用极简风格，**内联在输入框上方**显示，不弹出模态框：
 
-const ConfirmationPrompt: FC<Props> = ({ details, onResponse }) => {
-  return (
-    <Box flexDirection="column">
-      <Text bold color="yellow">⚠️ {details.title}</Text>
-      <Text>{details.message}</Text>
-
-      {details.details && (
-        <Box marginY={1}>
-          <Text dimColor>{details.details}</Text>
-        </Box>
-      )}
-
-      {details.risks && details.risks.length > 0 && (
-        <Box flexDirection="column">
-          <Text color="red">风险：</Text>
-          {details.risks.map((risk, i) => (
-            <Text key={i}>  • {risk}</Text>
-          ))}
-        </Box>
-      )}
-
-      <Box marginTop={1}>
-        <SelectInput
-          items={[
-            { label: '✅ 批准', value: 'approve' },
-            { label: '❌ 拒绝', value: 'deny' },
-            { label: '✅ 批准并记住', value: 'approve_session' },
-          ]}
-          onSelect={(item) => {
-            onResponse({
-              approved: item.value.startsWith('approve'),
-              scope: item.value === 'approve_session' ? 'session' : 'once',
-            });
-          }}
-        />
-      </Box>
-    </Box>
-  );
-};
 ```
+? Bash · No matching rule, requires confirmation
+  Command: npm install --save-dev typescript
+  This operation will execute system commands
+
+  > allow  (y)
+    always  (a)
+    deny  (n)
+```
+
+**核心设计**：
+- 标题行显示工具名 + 确认原因
+- 高亮展示命令/文件路径（使用 accent color）
+- 上下箭头选择 + `y`/`a`/`n` 快捷键
+- 焦点管理使用同步切换，避免与输入框键盘冲突
+
+```typescript
+// ConfirmationPrompt 选项布局
+options.map((opt, i) => (
+  <Box key={opt.value}>
+    <Text color={i === selected ? theme.colors.success : theme.colors.text.muted}>
+      {i === selected ? '> ' : '  '}{opt.label}
+    </Text>
+    <Text dimColor>  ({opt.hotkey})</Text>
+  </Box>
+))
+```
+
+**焦点同步**：`useConfirmation` hook 在 `showConfirmation()` 和 `handleResponse()` 中**同步调用** `focusActions.setFocus()`，在 React 调度渲染之前生效，避免 `useInput` 竞态。
 
 ## 7.7 ExecutionPipeline 主类
 

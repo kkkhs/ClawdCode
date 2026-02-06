@@ -619,7 +619,31 @@ export type {
 
 ---
 
-## 5.7 项目配置文件
+## 5.7 代码块文件路径指令
+
+系统提示词中包含一段指令，要求 AI 在展示项目代码时使用 `language:filepath` 格式：
+
+```typescript
+// 在 DEFAULT_SYSTEM_PROMPT 中
+`# Code block formatting
+
+When showing code from the project, ALWAYS include the file path in the code fence:
+
+\`\`\`language:relative/path/to/file
+code here
+\`\`\`
+
+Examples:
+- \`\`\`typescript:src/utils/helper.ts
+- \`\`\`python:scripts/deploy.py
+
+Use paths relative to the project root.
+Only use plain \`\`\`language when the code is a standalone snippet not tied to any file.`
+```
+
+**作用**：配合 Markdown 解析器的 `parseCodeBlockSpec` 函数，UI 自动提取文件路径并在代码块头部展示。
+
+## 5.8 项目配置文件
 
 ### 5.7.1 CLAWDCODE.md 示例
 

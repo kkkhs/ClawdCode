@@ -966,6 +966,8 @@ export class HookStage implements PipelineStage {
 
 ### 7.5.4 Stage 4: Confirmation（用户确认）
 
+确认对话框采用**内联渲染**（显示在输入框上方），不中断消息列表浏览。
+
 **文件位置**：`src/tools/execution/stages/ConfirmationStage.ts`
 
 ```typescript
@@ -1105,6 +1107,35 @@ export class ConfirmationStage implements PipelineStage {
   }
 }
 ```
+
+#### 用户拒绝后的行为
+
+当用户选择 **deny** 时，Agent 循环会**立即终止**，不再继续思考或执行后续工具调用：
+
+```typescript
+// Agent.ts executeLoop 中
+const result = await this.executeToolCall(toolCall, context);
+
+if (!result.success && result.error?.includes('User rejected')) {
+  return { success: true, metadata: { turnsCount, toolCallsCount } };
+}
+```
+
+#### 连续失败检测
+
+Agent 内置连续工具失败检测（`MAX_CONSECUTIVE_FAILURES = 3`）。连续失败 3 次后，注入系统消息提醒 LLM 停止重试。
+
+#### 确认 UI 样式
+
+```
+? Bash · No matching rule, requires confirmation
+  Command: npm install --save-dev typescript
+  > allow  (y)
+    always  (a)
+    deny  (n)
+```
+
+焦点管理使用 `useConfirmation` hook 中的**同步焦点切换**（非 useEffect），避免与输入框的键盘冲突。
 
 ### 7.5.5 Stage 5: Execution（实际执行）
 

@@ -1364,8 +1364,13 @@ export function useCtrlCHandler(onExit?: () => void): void {
 | **Ink + React** | 熟悉的组件化开发方式 |
 | **主题系统** | 支持多主题切换和自定义 |
 | **Markdown 渲染** | 终端友好的格式化输出 |
-| **确认机制** | 与执行管道无缝集成 |
+| **确认机制** | 内联确认（输入框上方），与执行管道无缝集成 |
 | **错误边界** | 优雅的错误处理 |
+| **代码块路径** | 解析 `language:filepath` 格式，头部显示文件路径和 `/copy` 提示 |
+| **Tool Call 展示** | 紧凑 dim 样式 `ToolCallLine` 组件，与正文视觉区分 |
+| **Thinking 折叠** | 思考块完成后自动折叠，`/thinking` 全局切换 |
+| **AbortController** | Ctrl+C 正确中断流式输出和 Agent 循环 |
+| **焦点同步** | 命令式焦点检查 + 同步焦点切换，避免 useInput 竞态 |
 
 ### UI 与 Agent 的连接
 
@@ -1407,12 +1412,13 @@ export function useCtrlCHandler(onExit?: () => void): void {
 本章实现的 UI 组件是**独立完整**的：
 
 - ✅ ThemeManager 主题系统
-- ✅ ConfirmationPrompt 确认提示
-- ✅ MessageRenderer 消息渲染
-- ✅ Markdown 解析器
+- ✅ ConfirmationPrompt 确认提示（内联渲染，极简风格）
+- ✅ MessageRenderer 消息渲染（含 ToolCallLine、Thinking 折叠）
+- ✅ Markdown 解析器（支持 filePath、缩进代码块）
+- ✅ CodeHighlighter（含文件路径展示和 `/copy` 提示）
 - ✅ ErrorBoundary 错误边界
-- ✅ 常用 Hooks（useTerminalWidth、useConfirmation 等）
-- ✅ ClawdInterface 完整主界面组件
+- ✅ 常用 Hooks（useTerminalWidth、useConfirmation 同步焦点等）
+- ✅ ClawdInterface 完整主界面组件（AbortController、Tool Call Display）
 
 ### 项目中已有的完整实现
 
