@@ -72,6 +72,7 @@ export const helpCommand: SlashCommand = {
       session: '💬 会话',
       config: '⚙️ 配置',
       skills: '🧠 Skills',
+      hooks: '🪝 Hooks',
       git: '🔀 Git',
       mcp: '🔌 MCP',
       custom: '📝 自定义',
@@ -612,6 +613,106 @@ function getSourceLabel(source: string): string {
 }
 
 /**
+ * /hooks - Hooks 管理
+ */
+export const hooksCommand: SlashCommand = {
+  name: 'hooks',
+  description: '查看和管理 Hooks',
+  category: 'hooks',
+  usage: '/hooks [status|list]',
+  examples: ['/hooks', '/hooks status', '/hooks list'],
+  fullDescription: '查看 Hooks 配置状态和已配置的 Hook 列表。',
+
+  async handler(args: string): Promise<SlashCommandResult> {
+    const { getHookManager, HookEvent } = await import('../hooks/index.js');
+    const manager = getHookManager();
+    
+    const trimmedArgs = args.trim().toLowerCase();
+    
+    // 显示状态
+    if (trimmedArgs === 'status' || trimmedArgs === '') {
+      const enabled = manager.isEnabled();
+      const counts = manager.getHookCounts();
+      const totalHooks = Object.values(counts).reduce((a, b) => a + b, 0);
+      const configuredEvents = manager.getConfiguredEvents();
+      
+      let content = `## 🪝 Hooks 状态\n\n`;
+      content += `| 属性 | 值 |\n`;
+      content += `|------|----|\n`;
+      content += `| 状态 | ${enabled ? '✅ 启用' : '❌ 禁用'} |\n`;
+      content += `| 已配置 Hooks | ${totalHooks} 个 |\n`;
+      content += `| 事件类型 | ${configuredEvents.length} 种 |\n`;
+      
+      if (totalHooks > 0) {
+        content += `\n### 📊 按事件统计\n\n`;
+        for (const [event, count] of Object.entries(counts)) {
+          content += `- **${event}**: ${count} 个\n`;
+        }
+      }
+      
+      content += `\n---\n`;
+      content += `💡 使用 \`/hooks list\` 查看详细配置\n`;
+      
+      return { success: true, type: 'info', content };
+    }
+    
+    // 列出所有配置
+    if (trimmedArgs === 'list') {
+      const config = manager.getConfig();
+      const events = Object.values(HookEvent);
+      
+      let content = `## 🪝 Hooks 配置\n\n`;
+      
+      let hasAny = false;
+      for (const event of events) {
+        const matchers = config[event];
+        if (!matchers || !Array.isArray(matchers) || matchers.length === 0) {
+          continue;
+        }
+        
+        hasAny = true;
+        content += `### ${event}\n\n`;
+        
+        for (const matcher of matchers) {
+          const name = matcher.name || '(unnamed)';
+          content += `**${name}**\n`;
+          
+          if (matcher.matcher) {
+            if (matcher.matcher.tools) {
+              content += `- Tools: \`${matcher.matcher.tools}\`\n`;
+            }
+            if (matcher.matcher.paths) {
+              content += `- Paths: \`${matcher.matcher.paths}\`\n`;
+            }
+            if (matcher.matcher.commands) {
+              content += `- Commands: \`${matcher.matcher.commands}\`\n`;
+            }
+          }
+          
+          content += `- Hooks: ${matcher.hooks?.length || 0} 个\n`;
+          content += '\n';
+        }
+      }
+      
+      if (!hasAny) {
+        content += `暂无配置的 Hooks。\n\n`;
+        content += `在 \`settings.json\` 中添加 \`hooks\` 配置：\n`;
+        content += `- \`~/.clawdcode/settings.json\` (用户级)\n`;
+        content += `- \`.clawdcode/settings.json\` (项目级)\n`;
+      }
+      
+      return { success: true, type: 'info', content };
+    }
+    
+    return {
+      success: false,
+      type: 'error',
+      error: `未知子命令: ${trimmedArgs}\n可用: status, list`,
+    };
+  },
+};
+
+/**
  * 所有内置命令
  */
 export const builtinCommands: SlashCommand[] = [
@@ -623,4 +724,5 @@ export const builtinCommands: SlashCommand[] = [
   themeCommand,
   statusCommand,
   skillsCommand,
+  hooksCommand,
 ];

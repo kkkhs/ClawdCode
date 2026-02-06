@@ -10,6 +10,7 @@ export type CommandCategory =
   | 'session'      // 会话相关
   | 'config'       // 配置相关
   | 'skills'       // Skills 相关
+  | 'hooks'        // Hooks 相关
   | 'git'          // Git 相关
   | 'mcp'          // MCP 相关
   | 'custom';      // 自定义命令

@@ -4,57 +4,13 @@
  */
 
 import { nanoid } from 'nanoid';
-import type { PipelineStage, ToolExecution, PreToolHookResult } from '../types.js';
-
-/**
- * Hook 管理器接口（简化版，完整实现在第12章）
- */
-interface IHookManager {
-  isEnabled(): boolean;
-  executePreToolHooks(
-    toolName: string,
-    toolUseId: string,
-    params: Record<string, unknown>,
-    context: { projectDir: string; sessionId: string; permissionMode: string }
-  ): Promise<PreToolHookResult>;
-}
-
-/**
- * 默认 Hook 管理器（空实现）
- */
-class DefaultHookManager implements IHookManager {
-  private static instance: DefaultHookManager;
-
-  static getInstance(): DefaultHookManager {
-    if (!this.instance) {
-      this.instance = new DefaultHookManager();
-    }
-    return this.instance;
-  }
-
-  isEnabled(): boolean {
-    return false;
-  }
-
-  async executePreToolHooks(): Promise<PreToolHookResult> {
-    return { decision: 'allow' };
-  }
-}
+import type { PipelineStage, ToolExecution } from '../types.js';
+import { onPreToolUse } from '../../../hooks/index.js';
 
 export class HookStage implements PipelineStage {
   readonly name = 'hook';
-  private hookManager: IHookManager;
-
-  constructor(hookManager?: IHookManager) {
-    this.hookManager = hookManager || DefaultHookManager.getInstance();
-  }
 
   async process(execution: ToolExecution): Promise<void> {
-    // 跳过条件：Hook 未启用
-    if (!this.hookManager.isEnabled()) {
-      return;
-    }
-
     const tool = execution._internal.tool;
     if (!tool) {
       return;
@@ -64,18 +20,14 @@ export class HookStage implements PipelineStage {
     const toolUseId = execution.context.messageId || `tool_${nanoid()}`;
     execution._internal.hookToolUseId = toolUseId;
 
-    const projectDir = execution.context.workspaceRoot || process.cwd();
-
-    // 执行 PreToolUse hooks
-    const result = await this.hookManager.executePreToolHooks(
+    // 执行 PreToolUse hooks（通过 HookService）
+    const result = await onPreToolUse(
       tool.name,
       toolUseId,
       execution.params as Record<string, unknown>,
-      {
-        projectDir,
-        sessionId: execution.context.sessionId || 'unknown',
-        permissionMode: execution.context.permissionMode || 'default',
-      }
+      execution.context.sessionId || 'unknown',
+      execution.context.workspaceRoot || process.cwd(),
+      execution.context.permissionMode
     );
 
     // 处理 Hook 决策

@@ -3,60 +3,69 @@
  * 执行工具使用后的钩子
  */
 
-import type { PipelineStage, ToolExecution, PostToolHookParams } from '../types.js';
-
-/**
- * Hook 管理器接口（简化版，完整实现在第12章）
- */
-interface IHookManager {
-  isEnabled(): boolean;
-  executePostToolUseHooks(params: PostToolHookParams): Promise<void>;
-}
-
-/**
- * 默认 Hook 管理器（空实现）
- */
-class DefaultHookManager implements IHookManager {
-  private static instance: DefaultHookManager;
-
-  static getInstance(): DefaultHookManager {
-    if (!this.instance) {
-      this.instance = new DefaultHookManager();
-    }
-    return this.instance;
-  }
-
-  isEnabled(): boolean {
-    return false;
-  }
-
-  async executePostToolUseHooks(): Promise<void> {
-    // 空实现
-  }
-}
+import type { PipelineStage, ToolExecution } from '../types.js';
+import { onPostToolUse, onPostToolUseFailure } from '../../../hooks/index.js';
 
 export class PostHookStage implements PipelineStage {
   readonly name = 'postHook';
-  private hookManager: IHookManager;
-
-  constructor(hookManager?: IHookManager) {
-    this.hookManager = hookManager || DefaultHookManager.getInstance();
-  }
 
   async process(execution: ToolExecution): Promise<void> {
-    // 跳过条件：Hook 未启用
-    if (!this.hookManager.isEnabled()) {
+    const result = execution.getResult();
+    if (!result) {
       return;
     }
 
-    const result = execution.getResult();
+    const tool = execution._internal.tool;
+    if (!tool) {
+      return;
+    }
 
-    // 执行 PostToolUse hooks
-    await this.hookManager.executePostToolUseHooks({
-      toolName: execution.toolName,
-      params: execution.params,
-      result,
-      context: execution.context,
-    });
+    // 复用 PreToolUse 阶段生成的 toolUseId
+    const toolUseId = execution._internal.hookToolUseId || `tool_post_${Date.now()}`;
+    const sessionId = execution.context.sessionId || 'unknown';
+    const projectDir = execution.context.workspaceRoot || process.cwd();
+    const permissionMode = execution.context.permissionMode;
+
+    // 根据执行成功/失败调用不同的 hooks（通过 HookService）
+    if (result.success) {
+      // 执行 PostToolUse hooks
+      const hookResult = await onPostToolUse(
+        tool.name,
+        toolUseId,
+        execution.params as Record<string, unknown>,
+        result,
+        sessionId,
+        projectDir,
+        permissionMode
+      );
+
+      // 处理 Hook 结果：添加额外上下文
+      if (hookResult.additionalContext) {
+        // 将 Hook 注入的上下文追加到 llmContent
+        const currentResult = execution.getResult();
+        if (currentResult) {
+          currentResult.llmContent += `\n\n[Hook Context]\n${hookResult.additionalContext}`;
+        }
+      }
+
+      // 处理 Hook 结果：修改输出
+      if (hookResult.modifiedOutput !== undefined) {
+        const currentResult = execution.getResult();
+        if (currentResult) {
+          currentResult.llmContent = String(hookResult.modifiedOutput);
+        }
+      }
+    } else {
+      // 执行 PostToolUseFailure hooks
+      await onPostToolUseFailure(
+        tool.name,
+        toolUseId,
+        execution.params as Record<string, unknown>,
+        result.error?.message || 'Unknown error',
+        sessionId,
+        projectDir,
+        permissionMode
+      );
+    }
   }
 }

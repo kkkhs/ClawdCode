@@ -77,6 +77,7 @@ export default defineConfig({
             { text: '第 12b 章：交互式 Commands', link: '/guide/chapter-12b' },
             { text: '第 12c 章：流式输出与主题持久化', link: '/guide/chapter-12c' },
             { text: '第 12d 章：Skills 系统', link: '/guide/chapter-12d' },
+            { text: '第 12e 章：Hooks 系统', link: '/guide/chapter-12e' },
           ]
         }
       ]

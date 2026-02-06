@@ -9,6 +9,7 @@ import type { Message } from '../agent/types.js';
 import type { CompactionOptions, CompactionResult, FileContent } from './types.js';
 import { TokenCounter } from './TokenCounter.js';
 import { FileAnalyzer } from './FileAnalyzer.js';
+import { onCompaction } from '../hooks/index.js';
 
 export class CompactionService {
   /** 压缩阈值百分比（80%） */
@@ -43,6 +44,27 @@ export class CompactionService {
   ): Promise<CompactionResult> {
     const preTokens = options.actualPreTokens
       ?? TokenCounter.countTokens(messages, options.modelName);
+
+    // 执行 Compaction Hook - 检查是否应该阻止压缩
+    const shouldPrevent = await onCompaction(
+      preTokens,
+      messages.length,
+      options.sessionId || 'unknown',
+      options.projectDir || process.cwd()
+    );
+
+    if (shouldPrevent) {
+      console.log('[CompactionService] 压缩被 Hook 阻止');
+      return {
+        success: false,
+        summary: '',
+        preTokens,
+        postTokens: preTokens,
+        filesIncluded: [],
+        compactedMessages: messages,
+        error: 'Compaction prevented by hook',
+      };
+    }
 
     try {
       console.log('[CompactionService] 开始压缩，消息数:', messages.length);

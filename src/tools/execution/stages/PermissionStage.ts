@@ -14,6 +14,7 @@ import {
 } from '../types.js';
 import { PermissionChecker } from '../../validation/PermissionChecker.js';
 import { SensitiveFileDetector, SensitivityLevel } from '../../validation/SensitiveFileDetector.js';
+import { onPermissionRequest } from '../../../hooks/index.js';
 
 export class PermissionStage implements PipelineStage {
   readonly name = 'permission';
@@ -80,6 +81,17 @@ export class PermissionStage implements PipelineStage {
         return;
 
       case PermissionResult.ASK:
+        // 执行 PermissionRequest Hook
+        const hookDecision = await this.executePermissionHook(execution, tool.name);
+        if (hookDecision === 'approve') {
+          // Hook 批准，跳过确认
+          break;
+        } else if (hookDecision === 'deny') {
+          // Hook 拒绝
+          execution.abort('Permission denied by hook');
+          return;
+        }
+        // Hook 返回 ask 或无 hook，继续标记需要确认
         execution._internal.needsConfirmation = true;
         execution._internal.confirmationReason =
           checkResult.reason || 'This operation requires confirmation';
@@ -210,5 +222,21 @@ export class PermissionStage implements PipelineStage {
     }
 
     return paths;
+  }
+
+  /**
+   * 执行 PermissionRequest Hook
+   */
+  private async executePermissionHook(
+    execution: ToolExecution,
+    toolName: string
+  ): Promise<'approve' | 'deny' | 'ask'> {
+    return onPermissionRequest(
+      toolName,
+      execution.params as Record<string, unknown>,
+      execution.context.sessionId || 'unknown',
+      execution.context.workspaceRoot || process.cwd(),
+      execution.context.permissionMode
+    );
   }
 }

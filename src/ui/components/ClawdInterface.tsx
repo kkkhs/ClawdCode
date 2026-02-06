@@ -350,6 +350,35 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
           console.warn('[WARN] Skills errors:', skillsResult.errors);
         }
 
+        // 6. 初始化 Hooks 系统（可选，失败不影响主流程）
+        try {
+          const { initializeHooks, getHookStats, onSessionStart } = await import('../../hooks/index.js');
+          const { ConfigManager } = await import('../../config/index.js');
+          const configManager = ConfigManager.getInstance();
+          const fullConfig = configManager.getConfig();
+          const hooksConfig = fullConfig.hooks || {};
+          
+          if (debug) {
+            console.log('[DEBUG] Config paths:', configManager.getLoadedConfigPaths());
+            console.log('[DEBUG] Hooks config:', JSON.stringify(hooksConfig, null, 2));
+          }
+          
+          initializeHooks(hooksConfig);
+          
+          if (debug) {
+            const stats = getHookStats();
+            console.log('[DEBUG] Hooks stats:', stats);
+          }
+
+          // 7. 执行 SessionStart hooks
+          await onSessionStart(currentSessionId, process.cwd());
+        } catch (hookError) {
+          // Hooks 初始化失败不应该阻止主流程
+          if (debug) {
+            console.warn('[DEBUG] Hooks initialization failed:', hookError);
+          }
+        }
+
         setIsInitializing(false);
 
         if (debug) {
@@ -470,6 +499,17 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
 
     // 设置 thinking 状态
     sessionActions().setThinking(true);
+
+    // 执行 UserPromptSubmit hooks
+    const { onUserPromptSubmit } = await import('../../hooks/index.js');
+    const injectedContext = await onUserPromptSubmit(value, sessionId, process.cwd());
+    
+    if (injectedContext) {
+      if (debug) {
+        console.log('[DEBUG] Hook injected context:', injectedContext);
+      }
+      sessionActions().addAssistantMessage(`[Hook] ${injectedContext}`);
+    }
 
     // 添加用户消息到 ContextManager（自动持久化）
     await ctxManager.addMessage('user', value);

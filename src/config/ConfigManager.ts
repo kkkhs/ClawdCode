@@ -224,6 +224,14 @@ export class ConfigManager {
       merged.mcpEnabled = override.mcpEnabled;
     }
 
+    // 合并 Hooks 配置（深度合并）
+    if (override.hooks || base.hooks) {
+      merged.hooks = {
+        ...(base.hooks || {}),
+        ...(override.hooks || {}),
+      };
+    }
+
     return merged;
   }
 

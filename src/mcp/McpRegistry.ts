@@ -25,6 +25,8 @@ export class McpRegistry extends EventEmitter {
 
   private constructor() {
     super();
+    // 增加监听器上限，因为可能有多个 Agent 实例监听同一事件
+    this.setMaxListeners(20);
   }
 
   /**

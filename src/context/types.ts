@@ -216,6 +216,8 @@ export interface CompactionOptions {
   maxContextTokens: number;
   actualPreTokens?: number;
   chatService?: unknown; // ChatService 类型
+  sessionId?: string;    // 用于 Hook 上下文
+  projectDir?: string;   // 用于 Hook 上下文
 }
 
 /**

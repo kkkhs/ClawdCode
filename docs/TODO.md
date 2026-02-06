@@ -36,8 +36,8 @@
 | 子命令 `doctor` | 诊断命令 | 诊断模块 | 第 12a 章 |
 | 子命令 `update` | 更新命令 | - | 第 12a 章 |
 | `subagentRegistry` | Subagent 注册表 | Subagent 系统 | 第 12c 章 |
-| `HookManager` | Hooks 管理器 | Hooks 系统 | 第 12b 章 |
-| `registerCleanup` | 注册退出清理函数 | GracefulShutdown | 第 12b 章 |
+| ~~`HookManager`~~ | ~~Hooks 管理器~~ | ~~Hooks 系统~~ | ✅ 第 12e 章 |
+| `registerCleanup` | 注册退出清理函数 | GracefulShutdown | 第 12e 章 |
 | `BackgroundShellManager` | 后台 Shell 管理 | Shell 工具 | 第 6 章 |
 | ~~`McpRegistry`~~ | ~~MCP 注册表~~ | ~~MCP 模块~~ | ✅ 第 10 章 |
 
@@ -80,7 +80,7 @@
 
 | 功能 | 说明 | 依赖 | 计划章节 |
 |------|------|------|----------|
-| HookManager 完整实现 | Hooks 管理器完整版（11 种事件） | - | 第 12b 章 |
+| ~~HookManager 完整实现~~ | ~~Hooks 管理器完整版（11 种事件）~~ | - | ✅ 第 12e 章 |
 | 交互式确认 UI | 集成 ConfirmationPrompt 到 SlashCommand 流程 | Store 集成 | 第 12a 章 |
 
 ## 第九章遗留
@@ -218,3 +218,22 @@
 | 系统提示注入 Skills 列表 | 第 12d 章 | 2026-02-06 |
 | ClawdInterface Skills 初始化 | 第 12d 章 | 2026-02-06 |
 | /skills 管理命令 | 第 12d 章 | 2026-02-06 |
+| Hooks 类型定义 (types.ts) | 第 12e 章 | 2026-02-06 |
+| Matcher 匹配器 | 第 12e 章 | 2026-02-06 |
+| HookExecutor 执行器 | 第 12e 章 | 2026-02-06 |
+| HookManager 管理器 | 第 12e 章 | 2026-02-06 |
+| /hooks 管理命令 | 第 12e 章 | 2026-02-06 |
+| HookStage ExecutionPipeline 集成 | 第 12e 章 | 2026-02-06 |
+| PostHookStage ExecutionPipeline 集成 | 第 12e 章 | 2026-02-06 |
+| ClawdInterface Hooks 初始化 | 第 12e 章 | 2026-02-06 |
+| config/types.ts HookConfig Schema 完善 | 第 12e 章 | 2026-02-06 |
+| ConfigSchema 添加 hooks 字段 | 第 12e 章 | 2026-02-06 |
+| ConfigManager.mergeConfig 支持 hooks | 第 12e 章 | 2026-02-06 |
+| HookService 简洁 API 层 | 第 12e 章 | 2026-02-06 |
+| SessionStart/SessionEnd hooks 集成 | 第 12e 章 | 2026-02-06 |
+| UserPromptSubmit hooks 集成 | 第 12e 章 | 2026-02-06 |
+| PermissionRequest hooks 集成 | 第 12e 章 | 2026-02-06 |
+| Compaction hooks 集成 | 第 12e 章 | 2026-02-06 |
+| HookService 统一工具执行 Hooks (onPreToolUse/onPostToolUse/onPostToolUseFailure) | 第 12e 章 | 2026-02-06 |
+| HookStage/PostHookStage 通过 HookService 调用 | 第 12e 章 | 2026-02-06 |
+| Stop hooks 集成到 Agent.executeLoop | 第 12e 章 | 2026-02-06 |

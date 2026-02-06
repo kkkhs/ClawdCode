@@ -35,6 +35,7 @@ import {
 import { configManager } from '../config/ConfigManager.js';
 import { McpRegistry } from '../mcp/index.js';
 import { agentDebug } from '../utils/debug.js';
+import { onStop } from '../hooks/index.js';
 
 // ========== 常量 ==========
 
@@ -329,6 +330,22 @@ export class Agent {
           continue;
         }
 
+        // 执行 Stop Hook - 允许 Hook 强制继续执行
+        const shouldContinue = await onStop(
+          'end_turn',
+          context.sessionId || 'unknown',
+          process.cwd()
+        );
+
+        if (shouldContinue) {
+          agentDebug.log('Stop hook requested to continue');
+          messages.push({
+            role: 'user',
+            content: '[System] Hook requested continuation. Please continue.',
+          });
+          continue;
+        }
+
         return {
           success: true,
           finalMessage: turnResult.content,
@@ -527,6 +544,9 @@ export class Agent {
       }
 
       // 4. 监听工具更新事件
+      // 注意：由于 McpRegistry 是单例，需要先移除旧监听器再添加新的
+      // 避免每次创建 Agent 时累积监听器
+      registry.removeAllListeners('toolsUpdated');
       registry.on('toolsUpdated', async () => {
         // 重新获取工具列表（TODO：增量更新）
         agentDebug.log('MCP 工具列表已更新');

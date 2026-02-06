@@ -99,7 +99,33 @@ export const McpServerConfigSchema = z.object({
 });
 
 /**
- * 完整配置 Schema (config.json)
+ * Hook 配置 Schema
+ * 
+ * 完整的 Hooks 配置结构，支持 11 种事件类型和匹配器配置
+ * 详细类型定义见 src/hooks/types.ts
+ */
+export const HookConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  defaultTimeout: z.number().optional(),
+  timeoutBehavior: z.enum(['ignore', 'deny', 'ask']).optional(),
+  failureBehavior: z.enum(['ignore', 'deny', 'ask']).optional(),
+  maxConcurrentHooks: z.number().optional(),
+  // 各事件类型的 Hook 列表（使用 passthrough 接受完整结构）
+  PreToolUse: z.array(z.any()).optional(),
+  PostToolUse: z.array(z.any()).optional(),
+  PostToolUseFailure: z.array(z.any()).optional(),
+  PermissionRequest: z.array(z.any()).optional(),
+  UserPromptSubmit: z.array(z.any()).optional(),
+  SessionStart: z.array(z.any()).optional(),
+  SessionEnd: z.array(z.any()).optional(),
+  Stop: z.array(z.any()).optional(),
+  SubagentStop: z.array(z.any()).optional(),
+  Notification: z.array(z.any()).optional(),
+  Compaction: z.array(z.any()).optional(),
+}).optional();
+
+/**
+ * 完整配置 Schema (config.json + settings.json)
  */
 export const ConfigSchema = z.object({
   // 默认模型配置
@@ -128,17 +154,10 @@ export const ConfigSchema = z.object({
   
   // MCP 是否启用
   mcpEnabled: z.boolean().optional(),
+  
+  // Hooks 配置（settings.json）
+  hooks: HookConfigSchema,
 });
-
-/**
- * Hook 配置 Schema
- */
-export const HookConfigSchema = z.object({
-  preToolCall: z.array(z.string()).optional(),
-  postToolCall: z.array(z.string()).optional(),
-  preMessage: z.array(z.string()).optional(),
-  postMessage: z.array(z.string()).optional(),
-}).optional();
 
 /**
  * 完整 ClawdCode 配置 Schema
