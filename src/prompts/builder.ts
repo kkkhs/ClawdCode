@@ -4,8 +4,9 @@
  * 按固定顺序组装系统提示词：
  * 1. 环境上下文 - 动态生成
  * 2. 基础提示词 - DEFAULT_SYSTEM_PROMPT 或 PLAN_MODE_SYSTEM_PROMPT
- * 3. 项目配置 - CLAWDCODE.md
- * 4. 追加内容 - 用户自定义
+ * 3. 可用 Skills 列表 - 渐进式披露的"发现阶段"
+ * 4. 项目配置 - CLAWDCODE.md
+ * 5. 追加内容 - 用户自定义
  */
 
 import fs from 'fs/promises';
@@ -13,6 +14,7 @@ import path from 'path';
 import { getEnvironmentContext } from '../utils/environment.js';
 import { DEFAULT_SYSTEM_PROMPT } from './default.js';
 import { PLAN_MODE_SYSTEM_PROMPT } from './plan.js';
+import { getSkillRegistry } from '../skills/index.js';
 import type { PermissionMode } from '../agent/types.js';
 
 // ========== 类型定义 ==========
@@ -139,7 +141,26 @@ export async function buildSystemPrompt(
     length: basePrompt.length,
   });
 
-  // 3. 项目配置（CLAWDCODE.md）- 始终尝试加载
+  // 3. 可用 Skills 列表（渐进式披露的"发现阶段"）
+  const skillRegistry = getSkillRegistry();
+  if (skillRegistry.isInitialized()) {
+    const skillsList = skillRegistry.generateAvailableSkillsList();
+    if (skillsList) {
+      const skillsSection = `# Available Skills
+
+${skillsList}
+
+When a user request matches a skill's description, use the Skill tool to load its full instructions.`;
+      parts.push(skillsSection);
+      sources.push({
+        name: 'skills',
+        loaded: true,
+        length: skillsSection.length,
+      });
+    }
+  }
+
+  // 4. 项目配置（CLAWDCODE.md）- 始终尝试加载
   const projectConfig = await loadProjectConfig(projectPath);
   if (projectConfig) {
     parts.push(`# Project Configuration\n\n${projectConfig}`);
@@ -157,7 +178,7 @@ export async function buildSystemPrompt(
     });
   }
 
-  // 4. 追加内容
+  // 5. 追加内容
   if (append?.trim()) {
     parts.push(append.trim());
     sources.push({

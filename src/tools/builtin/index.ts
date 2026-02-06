@@ -14,12 +14,16 @@ export { grepTool } from './grep.js';
 // Shell 工具
 export { bashTool } from './bash.js';
 
+// Skills 工具
+export { skillTool } from './skill.js';
+
 import { readTool } from './read.js';
 import { editTool } from './edit.js';
 import { writeTool } from './write.js';
 import { globTool } from './glob.js';
 import { grepTool } from './grep.js';
 import { bashTool } from './bash.js';
+import { skillTool } from './skill.js';
 import type { Tool } from '../types.js';
 
 /**
@@ -36,5 +40,7 @@ export function getBuiltinTools(): Tool[] {
     grepTool,
     // Shell 工具
     bashTool,
+    // Skills 工具
+    skillTool,
   ];
 }

@@ -71,6 +71,7 @@ export const helpCommand: SlashCommand = {
       general: '📋 通用',
       session: '💬 会话',
       config: '⚙️ 配置',
+      skills: '🧠 Skills',
       git: '🔀 Git',
       mcp: '🔌 MCP',
       custom: '📝 自定义',
@@ -449,6 +450,168 @@ export const statusCommand: SlashCommand = {
 };
 
 /**
+ * /skills - Skills 管理
+ */
+export const skillsCommand: SlashCommand = {
+  name: 'skills',
+  aliases: ['sk'],
+  description: '查看和管理 Skills',
+  category: 'skills',
+  usage: '/skills [name|refresh]',
+  examples: ['/skills', '/skills commit-message', '/skills refresh'],
+  fullDescription: '列出所有可用的 Skills，查看特定 Skill 详情，或刷新 Skills 列表。',
+
+  async handler(args: string): Promise<SlashCommandResult> {
+    const { getSkillRegistry } = await import('../skills/index.js');
+    const registry = getSkillRegistry();
+    
+    if (!registry.isInitialized()) {
+      return {
+        success: false,
+        type: 'error',
+        error: 'Skills 系统尚未初始化',
+      };
+    }
+    
+    const trimmedArgs = args.trim().toLowerCase();
+    
+    // 刷新 Skills
+    if (trimmedArgs === 'refresh' || trimmedArgs === 'reload') {
+      const result = await registry.refresh();
+      
+      let content = `## ✅ Skills 已刷新\n\n`;
+      content += `已加载 **${result.count}** 个 Skills:\n`;
+      content += `- 用户级: ${result.bySource.user}\n`;
+      content += `- 项目级: ${result.bySource.project}\n`;
+      content += `- 内置: ${result.bySource.builtin}\n`;
+      
+      if (result.errors.length > 0) {
+        content += `\n### ⚠️ 加载错误\n`;
+        for (const err of result.errors) {
+          content += `- \`${err.path}\`: ${err.error}\n`;
+        }
+      }
+      
+      return { success: true, type: 'success', content };
+    }
+    
+    // 查看特定 Skill 详情
+    if (trimmedArgs && trimmedArgs !== 'list') {
+      const skill = registry.getSkill(trimmedArgs);
+      
+      if (!skill) {
+        const allSkills = registry.getAllSkills();
+        const suggestions = allSkills
+          .filter(s => s.name.includes(trimmedArgs) || s.description.toLowerCase().includes(trimmedArgs))
+          .slice(0, 5);
+        
+        let errorContent = `❌ 未找到 Skill: \`${trimmedArgs}\`\n\n`;
+        if (suggestions.length > 0) {
+          errorContent += `**相似的 Skills：**\n`;
+          for (const s of suggestions) {
+            errorContent += `- \`${s.name}\` - ${s.description}\n`;
+          }
+        }
+        
+        return { success: false, type: 'error', content: errorContent };
+      }
+      
+      // 显示 Skill 详情
+      let content = `## 🧠 ${skill.name}\n\n`;
+      content += `${skill.description}\n\n`;
+      content += `| 属性 | 值 |\n`;
+      content += `|------|----|\n`;
+      content += `| 来源 | ${getSourceLabel(skill.source)} |\n`;
+      content += `| 路径 | \`${skill.path}\` |\n`;
+      content += `| 用户可调用 | ${skill.userInvocable ? '是' : '否'} |\n`;
+      content += `| 禁用模型调用 | ${skill.disableModelInvocation ? '是' : '否'} |\n`;
+      
+      if (skill.allowedTools && skill.allowedTools.length > 0) {
+        content += `| 允许工具 | ${skill.allowedTools.join(', ')} |\n`;
+      }
+      if (skill.whenToUse) {
+        content += `\n### 何时使用\n\n${skill.whenToUse}\n`;
+      }
+      if (skill.argumentHint) {
+        content += `\n### 参数提示\n\n${skill.argumentHint}\n`;
+      }
+      
+      return { success: true, type: 'info', content };
+    }
+    
+    // 列出所有 Skills
+    const allSkills = registry.getAllSkills();
+    
+    if (allSkills.length === 0) {
+      return {
+        success: true,
+        type: 'info',
+        content: `## 🧠 Skills\n\n暂无可用的 Skills。\n\n在以下目录添加 \`SKILL.md\` 文件:\n- \`~/.claude/skills/\` (用户级)\n- \`~/.clawdcode/skills/\` (用户级)\n- \`.claude/skills/\` (项目级)\n- \`.clawdcode/skills/\` (项目级)`,
+      };
+    }
+    
+    // 按来源分组
+    const grouped: Record<string, typeof allSkills> = {
+      builtin: [],
+      user: [],
+      project: [],
+    };
+    
+    for (const skill of allSkills) {
+      grouped[skill.source].push(skill);
+    }
+    
+    let content = `## 🧠 Skills (${allSkills.length})\n\n`;
+    
+    // 内置 Skills
+    if (grouped.builtin.length > 0) {
+      content += `### 📦 内置\n\n`;
+      for (const skill of grouped.builtin) {
+        content += `- \`${skill.name}\` - ${skill.description}\n`;
+      }
+      content += '\n';
+    }
+    
+    // 用户 Skills
+    if (grouped.user.length > 0) {
+      content += `### 👤 用户级\n\n`;
+      for (const skill of grouped.user) {
+        const invocable = skill.userInvocable ? ' ⚡' : '';
+        content += `- \`${skill.name}\`${invocable} - ${skill.description}\n`;
+      }
+      content += '\n';
+    }
+    
+    // 项目 Skills
+    if (grouped.project.length > 0) {
+      content += `### 📁 项目级\n\n`;
+      for (const skill of grouped.project) {
+        const invocable = skill.userInvocable ? ' ⚡' : '';
+        content += `- \`${skill.name}\`${invocable} - ${skill.description}\n`;
+      }
+      content += '\n';
+    }
+    
+    content += `---\n`;
+    content += `💡 使用 \`/skills <name>\` 查看详情 | ⚡ = 用户可调用\n`;
+    
+    return { success: true, type: 'info', content };
+  },
+};
+
+/**
+ * 获取来源标签
+ */
+function getSourceLabel(source: string): string {
+  switch (source) {
+    case 'builtin': return '📦 内置';
+    case 'user': return '👤 用户级';
+    case 'project': return '📁 项目级';
+    default: return source;
+  }
+}
+
+/**
  * 所有内置命令
  */
 export const builtinCommands: SlashCommand[] = [
@@ -459,4 +622,5 @@ export const builtinCommands: SlashCommand[] = [
   modelCommand,
   themeCommand,
   statusCommand,
+  skillsCommand,
 ];

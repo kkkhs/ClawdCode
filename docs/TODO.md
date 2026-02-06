@@ -198,3 +198,23 @@
 | ClawdInterface Slash 命令集成 | 第 12a 章 | 2026-02-04 |
 | 命令补全建议组件 (CommandSuggestions) | 第 12a 章 | 2026-02-04 |
 | 命令补全 UI (↑↓ 选择, Tab 补全) | 第 12a 章 | 2026-02-04 |
+| 交互式选择器 (InteractiveSelector) | 第 12b 章 | 2026-02-05 |
+| /model 交互式选择 | 第 12b 章 | 2026-02-05 |
+| /theme 交互式选择 | 第 12b 章 | 2026-02-05 |
+| 流式输出 (ChatService streaming) | 第 12c 章 | 2026-02-06 |
+| 思考过程显示 (thinking/reasoning) | 第 12c 章 | 2026-02-06 |
+| 流式消息管理 (sessionSlice streaming actions) | 第 12c 章 | 2026-02-06 |
+| 节流更新器 (throttled stream updater) | 第 12c 章 | 2026-02-06 |
+| 细粒度选择器 (useMessageById, useMessageIds) | 第 12c 章 | 2026-02-06 |
+| 主题自动检测 (detectColorMode) | 第 12c 章 | 2026-02-06 |
+| 主题持久化 (getTheme, saveTheme) | 第 12c 章 | 2026-02-06 |
+| Light 主题 (lightTheme.ts) | 第 12c 章 | 2026-02-06 |
+| Skills 类型定义 (types.ts) | 第 12d 章 | 2026-02-06 |
+| SkillLoader 解析器 | 第 12d 章 | 2026-02-06 |
+| SkillRegistry 注册中心 | 第 12d 章 | 2026-02-06 |
+| 内置 skill-creator Skill | 第 12d 章 | 2026-02-06 |
+| generateAvailableSkillsList 系统提示生成 | 第 12d 章 | 2026-02-06 |
+| Skill 工具 (skill.ts) | 第 12d 章 | 2026-02-06 |
+| 系统提示注入 Skills 列表 | 第 12d 章 | 2026-02-06 |
+| ClawdInterface Skills 初始化 | 第 12d 章 | 2026-02-06 |
+| /skills 管理命令 | 第 12d 章 | 2026-02-06 |

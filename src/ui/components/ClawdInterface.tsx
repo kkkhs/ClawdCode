@@ -339,6 +339,17 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
           console.warn('[WARN] Custom commands:', customCmdResult.warnings);
         }
 
+        // 5. 初始化 Skills 系统
+        const { initializeSkills } = await import('../../skills/index.js');
+        const skillsResult = await initializeSkills(process.cwd());
+        
+        if (debug && skillsResult.count > 0) {
+          console.log('[DEBUG] Loaded', skillsResult.count, 'skills');
+        }
+        if (skillsResult.errors.length > 0) {
+          console.warn('[WARN] Skills errors:', skillsResult.errors);
+        }
+
         setIsInitializing(false);
 
         if (debug) {
