@@ -131,10 +131,12 @@ function convertCustomToSlashCommand(
           };
         }
         
+        // 自定义命令：内容发送给 Agent 执行（对齐 Claude Code 设计）
         return {
           success: true,
           type: 'success',
           content: content,
+          sendToAgent: true,
         };
       } catch (error) {
         return {

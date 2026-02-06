@@ -77,6 +77,8 @@ export interface SlashCommandResult {
     /** 选择后的处理器名称 */
     handler: 'theme' | 'model';
   };
+  /** 是否将内容发送给 Agent（自定义命令默认 true） */
+  sendToAgent?: boolean;
 }
 
 /**

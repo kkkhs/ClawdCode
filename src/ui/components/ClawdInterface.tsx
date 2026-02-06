@@ -471,7 +471,15 @@ export const ClawdInterface: React.FC<ClawdInterfaceProps> = ({
           return;
         }
         
-        // 显示命令结果
+        // 自定义命令：将内容发送给 Agent 执行（对齐 Claude Code 设计）
+        if (result.sendToAgent && result.content) {
+          sessionActions().setThinking(false);
+          // 递归调用 processCommand，将处理后的 prompt 发送给 Agent
+          await processCommand(result.content);
+          return;
+        }
+        
+        // 显示命令结果（普通 success/info/error 类型）
         if (result.content) {
           sessionActions().addAssistantMessage(result.content);
         } else if (result.message) {
