@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/kkkhs/ClawdCode/compare/v1.8.0...v1.9.0) (2026-02-09)
+
+
+### Features
+
+* **docs-site:** integrate Giscus comments and busuanzi page views ([545cb38](https://github.com/kkkhs/ClawdCode/commit/545cb389e6ee40a50b7acb06f5efe20ec465b988))
+
+
+### Bug Fixes
+
+* **docs-site:** update Giscus repo-id and category-id ([217a013](https://github.com/kkkhs/ClawdCode/commit/217a01369f9cb7d1ccc89c1fd9f50d6db2965b81))
+
 ## [1.8.0](https://github.com/kkkhs/ClawdCode/compare/v1.7.0...v1.8.0) (2026-02-09)
 
 
