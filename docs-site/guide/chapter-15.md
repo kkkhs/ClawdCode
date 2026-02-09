@@ -1,8 +1,8 @@
-# 第 12c 章：流式输出与主题持久化
+# 第 15 章：流式输出与主题持久化
 
 > 本章实现流式输出显示、思考过程渲染、UI 渲染优化和主题持久化功能。
 
-## 12c.1 概述
+## 15.1 概述
 
 本章主要解决三个问题：
 
@@ -10,7 +10,7 @@
 2. **渲染优化**：避免输入和流式输出时的 UI 闪烁
 3. **主题持久化**：自动检测终端颜色模式，保存用户主题偏好
 
-## 12c.2 流式输出实现
+## 15.2 流式输出实现
 
 ### 类型定义扩展
 
@@ -203,7 +203,7 @@ finishStreamingMessage: (id: string) => {
 },
 ```
 
-## 12c.3 UI 渲染优化
+## 15.3 UI 渲染优化
 
 ### 节流更新器
 
@@ -385,7 +385,7 @@ render(<App />, {
 });
 ```
 
-## 12c.4 主题持久化
+## 15.4 主题持久化
 
 ### 终端颜色模式检测
 
@@ -569,7 +569,7 @@ if (args.theme && themeManager.hasTheme(args.theme)) {
 // 3. App.tsx 中不再重复设置主题，避免项目配置覆盖用户选择
 ```
 
-## 12c.5 MessageRenderer 思考过程显示
+## 15.5 MessageRenderer 思考过程显示
 
 ```typescript
 // src/ui/components/markdown/MessageRenderer.tsx
@@ -624,7 +624,7 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
 };
 ```
 
-## 12c.6 主题优先级总结
+## 15.6 主题优先级总结
 
 ```
 用户选择的主题 (~/.clawdcode/config.json)
@@ -636,7 +636,7 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
 
 **CLI `--theme` 参数**会覆盖上述所有，但只在当前会话有效。
 
-## 12c.7 Ctrl+C 中断机制
+## 15.7 Ctrl+C 中断机制
 
 使用 `AbortController` 实现完整的流式输出和 Agent 中断：
 
@@ -657,7 +657,7 @@ useCtrlCHandler({
 - Agent 端在每次工具调用前检查 `signal.aborted`
 - Stream 回调中使用 abort guard 跳过已中断的回调
 
-## 12c.8 Thinking 折叠与展开
+## 15.8 Thinking 折叠与展开
 
 思考块在流式输出完成后自动折叠：
 
@@ -672,12 +672,12 @@ const isThinkingExpanded = showAllThinking || localExpanded;
 - 折叠态显示：`▸ thought · N lines · preview...`
 - `/thinking` 命令切换全局 `showAllThinking` 状态
 
-## 12c.9 Status Bar 优化
+## 15.9 Status Bar 优化
 
 - Theme 名使用 accent 色
 - Session ID 完整显示（不截断）+ info 色 dimColor
 
-## 12c.10 Tool Call 显示
+## 15.10 Tool Call 显示
 
 Agent 执行工具时，`onToolCallStart` / `onToolResult` 回调追加紧凑日志到流式消息。`ToolCallLine` 组件以 dim 样式渲染，与正文视觉区分：
 
@@ -687,7 +687,7 @@ Agent 执行工具时，`onToolCallStart` / `onToolResult` 回调追加紧凑日
   Write src/new.ts ✗ permission denied
 ```
 
-## 12c.11 修改的文件
+## 15.11 修改的文件
 
 | 文件 | 说明 |
 |------|------|
@@ -713,7 +713,7 @@ Agent 执行工具时，`onToolCallStart` / `onToolResult` 回调追加紧凑日
 | `src/slash-commands/builtinCommands.ts` | /copy、/thinking、英文化 |
 | `src/prompts/default.ts` | 代码块路径指令 |
 
-## 12c.12 技术亮点
+## 15.12 技术亮点
 
 1. **流式输出**
    - OpenAI SDK 原生流式 API
@@ -746,7 +746,7 @@ Agent 执行工具时，`onToolCallStart` / `onToolResult` 回调追加紧凑日
    - dim 样式与正文视觉区分
    - `ToolCallLine` 组件正则匹配渲染
 
-## 12c.13 测试方法
+## 15.13 测试方法
 
 ### 测试流式输出
 

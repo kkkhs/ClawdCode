@@ -7,7 +7,7 @@
 <p align="center">
   <strong>An AI-Powered CLI Coding Agent</strong>
   <br>
-  <em>Your intelligent coding companion that reads, writes, and executes code directly in your terminal.</em>
+  <em>Inspired by Claude Code — read, write, and execute code directly in your terminal.</em>
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
   <a href="#-features">Features</a> •
   <a href="#-installation">Installation</a> •
   <a href="#-quick-start">Quick Start</a> •
-  <a href="#-custom-commands">Custom Commands</a> •
+  <a href="#%EF%B8%8F-architecture">Architecture</a> •
   <a href="#-documentation">Documentation</a>
 </p>
 
@@ -35,49 +35,69 @@
 <td width="50%">
 
 ### 🤖 Intelligent Agent
-- Natural language interface for coding tasks
-- **Streaming output** with real-time response
-- **Thinking process** with auto-collapse/expand
-- **Tool call display** with compact dim-styled logs
-- Context-aware project understanding
+- Agentic Loop: LLM + System Prompt + Context + Tools
+- Streaming output with real-time response
+- Thinking process with auto-collapse/expand
+- Tool call display with compact dim-styled logs
+- AbortController-based Ctrl+C interruption
 
 </td>
 <td width="50%">
 
-### 🛠️ Powerful Tools
-- **File Operations** - Read, write, and edit files
-- **Code Search** - Glob and Grep integration  
-- **Command Execution** - Safe shell operations
-- **MCP Protocol** - Extensible tool ecosystem
-- **Code block paths** - File paths in code fences
+### 🛠️ Built-in Tools (7)
+- **Read / Write / Edit** — file operations with diff preview
+- **Glob / Grep** — fast code search and pattern matching
+- **Bash** — shell execution with permission control
+- **MCP** — external tool integration via Model Context Protocol
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-### 🔒 Security First
-- **Inline permission prompt** above input area
-- User confirmation for write/execute operations
-- Configurable allow/deny rules
-- **Deny stops agent** - no continued thinking
-- Multiple permission modes
+### 🔒 Security & Permissions
+- 4 permission modes: `default` / `autoEdit` / `yolo` / `plan`
+- 7-stage execution pipeline with safety checks
+- Inline permission prompt above input area
+- Sensitive file detection (`.env`, credentials, etc.)
+- Deny stops agent immediately — no continued thinking
 
 </td>
 <td width="50%">
 
-### 🎨 Beautiful CLI
-- Ink-powered interactive UI
-- Markdown rendering & syntax highlighting
-- **Auto theme detection** (dark/light terminal)
-- **Theme persistence** across sessions
-- **`/copy` command** - Copy code blocks to clipboard
+### 🎨 Terminal UI
+- Ink (React for CLI) — declarative interactive UI
+- Markdown rendering with 140+ language syntax highlighting
+- 5 built-in themes with auto dark/light detection
+- Theme persistence across sessions
+- Code block file paths and `/copy` clipboard support
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🧩 Extensions
+- **Slash Commands** — `/help`, `/compact`, `/model`, `/theme`, ...
+- **Custom Commands** — Markdown files as commands, zero code
+- **Skills** — pluggable agent capabilities via `SKILL.md`
+- **Hooks** — 11 lifecycle events with pre/post shell scripts
+
+</td>
+<td width="50%">
+
+### 📦 State & Context
+- Zustand store with fine-grained subscriptions
+- Token counting and auto-compaction
+- Session persistence and resume (`--continue`)
+- Command history with arrow key navigation
+- MCP Registry for external tool servers
 
 </td>
 </tr>
 </table>
 
-## 📦 Installation
+## 📥 Installation
 
 ```bash
 # npm
@@ -113,7 +133,7 @@ export OPENAI_API_KEY=sk-your-deepseek-key
 clawdcode
 
 # With initial message
-clawdcode "分析这个项目的结构"
+clawdcode "analyze this project structure"
 
 # With specific model
 clawdcode --model gpt-4o
@@ -122,17 +142,51 @@ clawdcode --model gpt-4o
 clawdcode --continue
 ```
 
-### 3. Use Slash Commands
+### 3. Slash Commands
 
 ```
-/help      Show all commands
-/clear     Clear conversation
-/compact   Compress context (save tokens)
-/theme     Switch theme (dark/light/ocean/...)
-/status    Show session status
-/mcp       MCP server status
-/copy      Copy code block to clipboard (/copy list)
-/thinking  Toggle thinking blocks expand/collapse
+/help       Show all commands
+/clear      Clear conversation
+/compact    Compress context (save tokens)
+/model      Switch model interactively
+/theme      Switch theme (dark/light/ocean/forest/sunset)
+/status     Show session info
+/copy       Copy code block to clipboard (/copy list)
+/thinking   Toggle thinking block expand/collapse
+/mcp        MCP server status
+/hooks      List active hooks
+/skills     List loaded skills
+```
+
+## 🏗️ Architecture
+
+```
+Coding Agent = LLM + System Prompt + Context + Tools
+```
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  CLI Entry (yargs)                                       │
+│    ↓                                                     │
+│  Agent Loop ←──────────────────────────────┐             │
+│    ├─ Build Context (messages + tools)     │             │
+│    ├─ Call LLM (streaming)                 │             │
+│    ├─ Parse Response                       │             │
+│    │   ├─ text → render to UI              │             │
+│    │   └─ tool_calls → Execution Pipeline  │             │
+│    │        ├─ 1. Discovery                │             │
+│    │        ├─ 2. Permission               │             │
+│    │        ├─ 3. Pre-Hooks                │             │
+│    │        ├─ 4. Confirmation (UI)        │             │
+│    │        ├─ 5. Execute                  │             │
+│    │        ├─ 6. Post-Hooks               │             │
+│    │        └─ 7. Format                   │             │
+│    └─ Inject Results ──────────────────────┘             │
+│                                                          │
+│  Store (Zustand) ← → UI (Ink/React) ← → Theme Manager   │
+│  Context Manager ← → Token Counter ← → Compaction        │
+│  MCP Registry ← → External Tool Servers                  │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ## 📝 Custom Commands
@@ -189,43 +243,17 @@ Then use them:
 
 </details>
 
-## 📖 Documentation
-
-> 📚 **[Complete Tutorial](https://kkkhs.github.io/ClawdCode/)** - Build an AI CLI Coding Agent from scratch
-
-<details>
-<summary><strong>📗 Tutorial Chapters</strong></summary>
-
-| Part | Chapter | Topic |
-|------|---------|-------|
-| **Basics** | 1 | Coding Agent Overview |
-| | 2 | Project Setup |
-| | 3 | CLI Entry & Config |
-| **Core** | 4 | Agent Core & Agentic Loop |
-| | 5 | System Prompt Design |
-| | 6 | Tool System |
-| | 7 | Execution Pipeline |
-| | 8 | Context Management |
-| **Advanced** | 9 | UI System (Ink) |
-| | 10 | MCP Protocol |
-| | 11 | State Management (Zustand) |
-| | 12a | Slash Commands |
-| | 12b | Interactive Selectors |
-| | 12c | Streaming & Theme Persistence |
-
-</details>
-
 ## ⚙️ Configuration
 
 ClawdCode supports multiple configuration methods (in priority order):
 
-1. **CLI arguments** - `--api-key`, `--base-url`, `--model`
-2. **Environment variables** - `OPENAI_API_KEY`, `OPENAI_BASE_URL`
-3. **Project config** - `./.clawdcode/config.json`
-4. **User config** - `~/.clawdcode/config.json`
+1. **CLI arguments** — `--api-key`, `--base-url`, `--model`
+2. **Environment variables** — `OPENAI_API_KEY`, `OPENAI_BASE_URL`
+3. **Project config** — `./.clawdcode/config.json`
+4. **User config** — `~/.clawdcode/config.json`
 
 <details>
-<summary><strong>📝 Config File Example</strong></summary>
+<summary><strong>Config File Example</strong></summary>
 
 ```json
 {
@@ -254,7 +282,7 @@ ClawdCode supports multiple configuration methods (in priority order):
 </details>
 
 <details>
-<summary><strong>🔐 Permission Modes</strong></summary>
+<summary><strong>Permission Modes</strong></summary>
 
 | Mode | Read | Write | Execute | Description |
 |------|:----:|:-----:|:-------:|-------------|
@@ -264,13 +292,13 @@ ClawdCode supports multiple configuration methods (in priority order):
 | `plan` | ✅ | ❌ | ❌ | Read-only analysis |
 
 ```bash
-clawdcode --permission yolo "自动修复所有 lint 错误"
+clawdcode --permission yolo "fix all lint errors automatically"
 ```
 
 </details>
 
 <details>
-<summary><strong>📋 Permission Rules</strong></summary>
+<summary><strong>Permission Rules</strong></summary>
 
 ```json
 {
@@ -295,25 +323,41 @@ Rule format: `ToolName(pattern)`
 
 </details>
 
-## 🏗️ Architecture
+<details>
+<summary><strong>Hooks</strong></summary>
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Coding Agent = LLM + Tools               │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   User Input ──▶ Build Context ──▶ Call LLM ──▶ Response   │
-│                                        │                    │
-│                                   Tool Calls?               │
-│                                   ↓ Yes    ↓ No             │
-│                            Execute Tools   Return           │
-│                                   │                         │
-│                            Inject Results ──▶ Continue      │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+Add lifecycle hooks in `.clawdcode/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": ["echo 'About to run shell command: $TOOL_INPUT'"]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": ["npx prettier --write $FILE_PATH"]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": ["terminal-notifier -message '$NOTIFICATION_MESSAGE'"]
+      }
+    ]
+  }
+}
 ```
 
-## 🛠️ CLI Options
+11 hook events: `PreToolUse`, `PostToolUse`, `Stop`, `UserPromptSubmit`, `Notification`, etc.
+
+</details>
+
+## 💻 CLI Options
 
 ```
 Usage: clawdcode [options] [message]
@@ -331,36 +375,60 @@ Options:
   --version, -v      Show version
 ```
 
+## 🔧 Tech Stack
+
+| Technology | Role |
+|:-----------|:-----|
+| **TypeScript** | Type safety, strict mode |
+| **Bun** | Build & runtime |
+| **Ink** | React for CLI — declarative terminal UI |
+| **Zustand** | Lightweight state management |
+| **OpenAI SDK** | Compatible with OpenAI / DeepSeek / local models |
+| **Zod** | Runtime parameter validation |
+| **MCP** | Model Context Protocol for external tools |
+| **lowlight** | 140+ language syntax highlighting |
+
+## 📖 Documentation
+
+> 📚 **[Complete Tutorial — 17 Chapters](https://kkkhs.github.io/ClawdCode/)** — Build an AI CLI Coding Agent from scratch
+
+| Part | Chapters | Topics |
+|:-----|:---------|:-------|
+| **Getting Started** | 01 - 03 | Coding Agent overview, project setup, CLI entry |
+| **Core Architecture** | 04 - 07 | Agent core, system prompt, tool system, execution pipeline |
+| **System Integration** | 08 - 12 | Context management, UI system, MCP protocol, state management, command history |
+| **Extensions** | 13 - 17 | Slash commands, interactive commands, streaming & themes, skills, hooks |
+
 ## 💡 Examples
 
 ```bash
 # Analyze project structure
-clawdcode "分析这个项目的结构"
+clawdcode "analyze this project's architecture"
 
 # Fix TypeScript errors
-clawdcode "帮我修复 TypeScript 类型错误"
+clawdcode "fix all TypeScript type errors"
 
-# Create a new feature
-clawdcode "添加一个用户登录功能"
+# Code review (read-only mode)
+clawdcode --permission plan "review the recent code changes"
 
-# Code review with auto-read permission
-clawdcode --permission plan "review 最近的代码改动"
+# Full auto mode
+clawdcode --permission yolo "format all files with prettier"
 
-# Use DeepSeek for cost-effective coding
-clawdcode --base-url https://api.deepseek.com --model deepseek-chat "重构这个函数"
+# Use DeepSeek
+clawdcode --base-url https://api.deepseek.com --model deepseek-chat "refactor this function"
 ```
 
-## 🔧 Development
+## 🛠 Development
 
 ```bash
-# Clone the repository
+# Clone
 git clone https://github.com/kkkhs/ClawdCode.git
 cd ClawdCode
 
-# Install dependencies
+# Install
 bun install
 
-# Run in development mode
+# Dev
 bun run dev
 
 # Build
@@ -372,7 +440,7 @@ bun run typecheck
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome. Please submit a Pull Request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feat/amazing-feature`)

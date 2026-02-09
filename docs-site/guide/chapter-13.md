@@ -1,8 +1,8 @@
-# 第 12a 章：Slash Commands 系统
+# 第 13 章：Slash Commands 系统
 
 > 本章实现 Slash Commands 系统，提供用户与 Agent 交互的快捷方式。
 
-## 12a.1 概述
+## 13.1 概述
 
 Slash Commands 是以 `/` 开头的快捷命令，让用户可以快速执行常用操作：
 
@@ -19,7 +19,7 @@ Slash Commands 是以 `/` 开头的快捷命令，让用户可以快速执行常
 /thinking  - Toggle thinking block expansion
 ```
 
-## 12a.2 类型定义
+## 13.2 类型定义
 
 ### 核心类型
 
@@ -111,7 +111,7 @@ export interface CustomCommand {
 }
 ```
 
-## 12a.3 命令注册中心
+## 13.3 命令注册中心
 
 ```typescript
 // src/slash-commands/index.ts
@@ -174,7 +174,7 @@ export async function executeSlashCommand(
 }
 ```
 
-## 12a.4 模糊匹配
+## 13.4 模糊匹配
 
 使用 `fuse.js` 实现智能命令补全：
 
@@ -224,7 +224,7 @@ export function getFuzzyCommandSuggestions(input: string): CommandSuggestion[] {
 }
 ```
 
-## 12a.5 内置命令
+## 13.5 内置命令
 
 > **风格指南**：所有内置命令输出采用简洁英文，无 emoji，geek style。
 
@@ -316,7 +316,7 @@ export const thinkingCommand: SlashCommand = {
 };
 ```
 
-## 12a.6 自定义命令系统
+## 13.6 自定义命令系统
 
 ### 目录结构
 
@@ -564,7 +564,7 @@ allowed-tools:
 | `/info` | 项目状态 | 多个 Bash 嵌入 |
 | `/doc` | 生成文档 | 文件引用 `@$1` |
 
-## 12a.7 UI 集成
+## 13.7 UI 集成
 
 ### 初始化自定义命令
 
@@ -728,7 +728,7 @@ const handleSubmit = useCallback(async (value: string) => {
 }, [/* deps */]);
 ```
 
-## 12a.8 测试方法
+## 13.8 测试方法
 
 ```bash
 # 启动应用
@@ -772,7 +772,7 @@ bun run dev
 - Tab 补全后自动添加空格
 - 命令执行后显示结果
 
-## 12a.9 新增文件
+## 13.9 新增文件
 
 | 文件 | 说明 |
 |------|------|
@@ -786,7 +786,7 @@ bun run dev
 | `src/ui/components/input/CommandSuggestions.tsx` | 命令补全建议组件 |
 | `src/ui/components/input/InputArea.tsx` | 输入区域（更新，添加补全） |
 
-## 12a.10 技术亮点
+## 13.10 技术亮点
 
 1. **模糊匹配**
    - 使用 `fuse.js` 实现智能补全
@@ -814,7 +814,7 @@ bun run dev
    - 相同的 Frontmatter 格式
    - 相同的动态内容语法
 
-## 12a.11 已实现的新功能
+## 13.11 已实现的新功能
 
 - [x] `/copy` 命令 — 复制代码块到剪贴板，支持 `/copy list` 选择
 - [x] `/thinking` 命令 — 全局切换思考块展开/折叠
@@ -822,7 +822,7 @@ bun run dev
 - [x] 命令建议 UI 极简化 — 无 emoji、`MAX_VISIBLE=10`、geek style
 - [x] 内置命令输出英文化 — 所有输出简洁英文
 
-## 12a.12 TODO
+## 13.12 TODO
 
 以下功能待后续实现：
 

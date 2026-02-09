@@ -25,44 +25,34 @@ Coding Agent = LLM + System Prompt + Context + Tools
 | [02](/en/guide/chapter-02) | Project Setup | Tech stack, Hello World agent |
 | [03](/en/guide/chapter-03) | CLI Entry | yargs, middleware, version check |
 
-### Agent Core
+### Core Architecture
 
 | # | Topic | What you'll learn |
 |:--|:------|:------------------|
 | [04](/en/guide/chapter-04) | Agent Core | Agent class, Agentic Loop |
 | [05](/en/guide/chapter-05) | System Prompt | Prompt architecture, Plan mode |
-
-### Tools & Execution
-
-| # | Topic | What you'll learn |
-|:--|:------|:------------------|
 | [06](/en/guide/chapter-06) | Tool System | Tool abstraction, built-in tools |
 | [07](/en/guide/chapter-07) | Execution Pipeline | 7-stage pipeline, permission model |
-| [10](/en/guide/chapter-10) | MCP Protocol | External tool discovery, protocol |
 
-### State & Context
+### System Integration
 
 | # | Topic | What you'll learn |
 |:--|:------|:------------------|
 | [08](/en/guide/chapter-08) | Context Management | Token counting, auto-compaction |
-| [11](/en/guide/chapter-11) | State Management | Zustand store, session persistence |
-| [11b](/en/guide/chapter-11b) | Command History & Queue | Command history, queue system |
-
-### Interface
-
-| # | Topic | What you'll learn |
-|:--|:------|:------------------|
 | [09](/en/guide/chapter-09) | UI System | Ink (React for CLI), Markdown |
-| [12c](/en/guide/chapter-12c) | Streaming & Themes | Streaming output, theme persistence |
+| [10](/en/guide/chapter-10) | MCP Protocol | External tool discovery, protocol |
+| [11](/en/guide/chapter-11) | State Management | Zustand store, session persistence |
+| [12](/en/guide/chapter-12) | Command History & Queue | Command history, queue system |
 
 ### Extensions
 
 | # | Topic | What you'll learn |
 |:--|:------|:------------------|
-| [12a](/en/guide/chapter-12a) | Slash Commands | Command system, custom commands |
-| [12b](/en/guide/chapter-12b) | Interactive Commands | Model/theme interactive selection |
-| [12d](/en/guide/chapter-12d) | Skills System | Agent skill modules |
-| [12e](/en/guide/chapter-12e) | Hooks System | Lifecycle hooks |
+| [13](/en/guide/chapter-13) | Slash Commands | Command system, custom commands |
+| [14](/en/guide/chapter-14) | Interactive Commands | Model/theme interactive selection |
+| [15](/en/guide/chapter-15) | Streaming & Themes | Streaming output, theme persistence |
+| [16](/en/guide/chapter-16) | Skills System | Agent skill modules |
+| [17](/en/guide/chapter-17) | Hooks System | Lifecycle hooks |
 
 ## Tech Stack
 

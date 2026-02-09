@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "ClawdCode"
   text: "Build your own AI Coding Agent"
-  tagline: "Inspired by Claude Code's architecture. From first principles to production. 15 chapters, fully open source."
+  tagline: "Inspired by Claude Code's architecture. From first principles to production. 17 chapters, fully open source."
   image:
     src: /logo.svg
     alt: ClawdCode
@@ -40,49 +40,49 @@ features:
   - icon: "~"
     title: Plugin Architecture
     details: "Slash commands, skills, hooks, custom commands — extend agent behavior with a Markdown file, zero code needed."
-    link: /en/guide/chapter-12a
+    link: /en/guide/chapter-13
 ---
 
 <div class="vp-doc custom-home">
 
-## What You'll Build
+## 🔨 What You'll Build
 
 A fully functional CLI coding agent with these capabilities:
 
 <div class="capability-grid">
 <div class="capability">
 
-**Smart Conversations** — Multi-turn chat via OpenAI-compatible APIs with thinking display and auto-collapse
+🤖 **Smart Conversations** — Multi-turn chat via OpenAI-compatible APIs with thinking display and auto-collapse
 
 </div>
 <div class="capability">
 
-**File Operations** — Read, write, edit, search, glob — the agent autonomously operates on your codebase
+📂 **File Operations** — Read, write, edit, search, glob — the agent autonomously operates on your codebase
 
 </div>
 <div class="capability">
 
-**Command Execution** — Shell command execution with permission control and user confirmation
+⚡ **Command Execution** — Shell command execution with permission control and user confirmation
 
 </div>
 <div class="capability">
 
-**Context Management** — Token counting, auto-compaction, session persistence — break through context window limits
+🧠 **Context Management** — Token counting, auto-compaction, session persistence — break through context window limits
 
 </div>
 <div class="capability">
 
-**Interactive UI** — Syntax highlighting, Markdown rendering, themes, command completion, code block copy
+🎨 **Interactive UI** — Syntax highlighting, Markdown rendering, themes, command completion, code block copy
 
 </div>
 <div class="capability">
 
-**Extensible Architecture** — MCP protocol, custom commands, hooks system — designed for real-world use
+🧩 **Extensible Architecture** — MCP protocol, custom commands, hooks system — designed for real-world use
 
 </div>
 </div>
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -109,40 +109,40 @@ A fully functional CLI coding agent with these capabilities:
 └──────────────────────────────────────────────────────────┘
 ```
 
-## Why This Tutorial
+## 💡 Why This Tutorial
 
 <div class="why-grid">
 <div class="why-item">
 
-### Claude Code Reference
+### 🔬 Claude Code Reference
 
 Not a toy project. Architecture modeled after Anthropic's Claude Code — permission system, hooks, MCP integration.
 
 </div>
 <div class="why-item">
 
-### 15 Progressive Chapters
+### 📖 17 Progressive Chapters
 
 From Hello World to a complete agent. Every chapter has runnable code. Understand why every line exists.
 
 </div>
 <div class="why-item">
 
-### Production Quality
+### ✅ Production Quality
 
 TypeScript strict mode, Zod runtime validation, complete error handling, AbortController cancellation.
 
 </div>
 <div class="why-item">
 
-### Ready to Use
+### 📦 Ready to Use
 
 `npm install -g clawdcode` and go. Not just a tutorial — it's a working coding agent you can use today.
 
 </div>
 </div>
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 # Install
@@ -155,7 +155,7 @@ export OPENAI_API_KEY=sk-...
 clawdcode "analyze the architecture of this project"
 ```
 
-## Tech Stack
+## 🔧 Tech Stack
 
 <div class="stack-grid">
 <div class="stack-item">
@@ -192,11 +192,11 @@ clawdcode "analyze the architecture of this project"
 </div>
 </div>
 
-## By the Numbers
+## 📊 By the Numbers
 
 <div class="stats-grid">
 <div class="stat">
-<span class="stat-number">15</span>
+<span class="stat-number">17</span>
 <span class="stat-label">Chapters</span>
 </div>
 <div class="stat">

@@ -1,8 +1,8 @@
-# 第 12b 章：交互式 Slash Commands
+# 第 14 章：交互式 Slash Commands
 
 > 本章实现交互式 Slash Commands，包括 `/compact` 上下文压缩、`/model` 多模型选择、`/theme` 主题选择器。
 
-## 12b.1 概述
+## 14.1 概述
 
 上一章实现了基础的 Slash Commands 系统，但一些命令缺乏真正的功能集成：
 
@@ -18,7 +18,7 @@
 2. **扩展 SlashCommandResult** - 支持返回选择器配置
 3. **ClawdInterface 集成** - 处理选择器渲染和回调
 
-## 12b.2 InteractiveSelector 组件
+## 14.2 InteractiveSelector 组件
 
 创建通用的交互式选择器，支持键盘导航：
 
@@ -141,7 +141,7 @@ export function InteractiveSelector<T = string>({
 | **Vim 键位** | 支持 `j`/`k` 上下移动 |
 | **焦点控制** | 仅在获得焦点时响应输入 |
 
-## 12b.3 扩展类型定义
+## 14.3 扩展类型定义
 
 ### 更新 SlashCommandContext
 
@@ -216,7 +216,7 @@ export const FocusId = {
 } as const;
 ```
 
-## 12b.4 实现 /compact 命令
+## 14.4 实现 /compact 命令
 
 `/compact` 命令调用 `CompactionService` 执行真正的上下文压缩：
 
@@ -350,7 +350,7 @@ export const compactCommand: SlashCommand = {
 显示压缩结果统计
 ```
 
-## 12b.5 实现 /model 命令
+## 14.5 实现 /model 命令
 
 支持交互式多模型选择：
 
@@ -442,7 +442,7 @@ export const modelCommand: SlashCommand = {
 /model claude-3-5-sonnet
 ```
 
-## 12b.6 优化 /theme 命令
+## 14.6 优化 /theme 命令
 
 支持交互式主题选择：
 
@@ -504,7 +504,7 @@ export const themeCommand: SlashCommand = {
 };
 ```
 
-## 12b.7 ClawdInterface 集成
+## 14.7 ClawdInterface 集成
 
 ### 添加选择器状态
 
@@ -654,7 +654,7 @@ if (selectorState.isVisible) {
 }
 ```
 
-## 12b.8 ContextManager 扩展
+## 14.8 ContextManager 扩展
 
 添加 `replaceMessages` 方法用于压缩后更新消息：
 
@@ -669,7 +669,7 @@ replaceMessages(messages: ContextMessage[]): void {
 }
 ```
 
-## 12b.9 效果演示
+## 14.9 效果演示
 
 ### /compact 效果
 
@@ -722,7 +722,7 @@ replaceMessages(messages: ContextMessage[]): void {
 ╰─────────────────────────────────────────────────╯
 ```
 
-## 12b.10 新增/修改文件
+## 14.10 新增/修改文件
 
 | 文件 | 说明 |
 |------|------|
@@ -735,7 +735,7 @@ replaceMessages(messages: ContextMessage[]): void {
 | `src/context/ContextManager.ts` | 更新：添加 replaceMessages 方法 |
 | `src/ui/components/ClawdInterface.tsx` | 更新：选择器状态和处理逻辑 |
 
-## 12b.11 设计要点
+## 14.11 设计要点
 
 ### 1. 类型驱动的结果处理
 
@@ -770,7 +770,7 @@ Message[]
 ContextMessage[]
 ```
 
-## 12b.12 测试方法
+## 14.12 测试方法
 
 ```bash
 # 启动应用

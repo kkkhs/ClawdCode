@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 
 const zhSidebar = {
   '/guide/': [
@@ -18,47 +19,35 @@ const zhSidebar = {
       ]
     },
     {
-      text: 'Agent 核心',
+      text: '核心架构',
       collapsed: false,
       items: [
         { text: '04. Agent 核心', link: '/guide/chapter-04' },
         { text: '05. System Prompt', link: '/guide/chapter-05' },
-      ]
-    },
-    {
-      text: '工具与执行',
-      collapsed: false,
-      items: [
         { text: '06. 工具系统', link: '/guide/chapter-06' },
         { text: '07. 执行管道与权限', link: '/guide/chapter-07' },
-        { text: '10. MCP 协议', link: '/guide/chapter-10' },
       ]
     },
     {
-      text: '状态与上下文',
+      text: '系统集成',
       collapsed: false,
       items: [
         { text: '08. 上下文管理', link: '/guide/chapter-08' },
-        { text: '11. 状态管理 (Zustand)', link: '/guide/chapter-11' },
-        { text: '11b. 命令历史与队列', link: '/guide/chapter-11b' },
-      ]
-    },
-    {
-      text: '界面',
-      collapsed: false,
-      items: [
         { text: '09. UI 系统 (Ink)', link: '/guide/chapter-09' },
-        { text: '12c. 流式输出与主题', link: '/guide/chapter-12c' },
+        { text: '10. MCP 协议', link: '/guide/chapter-10' },
+        { text: '11. 状态管理 (Zustand)', link: '/guide/chapter-11' },
+        { text: '12. 命令历史与队列', link: '/guide/chapter-12' },
       ]
     },
     {
-      text: '扩展',
+      text: '扩展能力',
       collapsed: false,
       items: [
-        { text: '12a. Slash Commands', link: '/guide/chapter-12a' },
-        { text: '12b. 交互式 Commands', link: '/guide/chapter-12b' },
-        { text: '12d. Skills 系统', link: '/guide/chapter-12d' },
-        { text: '12e. Hooks 系统', link: '/guide/chapter-12e' },
+        { text: '13. Slash Commands', link: '/guide/chapter-13' },
+        { text: '14. 交互式 Commands', link: '/guide/chapter-14' },
+        { text: '15. 流式输出与主题', link: '/guide/chapter-15' },
+        { text: '16. Skills 系统', link: '/guide/chapter-16' },
+        { text: '17. Hooks 系统', link: '/guide/chapter-17' },
       ]
     },
   ]
@@ -82,53 +71,41 @@ const enSidebar = {
       ]
     },
     {
-      text: 'Agent Core',
+      text: 'Core Architecture',
       collapsed: false,
       items: [
         { text: '04. Agent Core', link: '/en/guide/chapter-04' },
         { text: '05. System Prompt', link: '/en/guide/chapter-05' },
-      ]
-    },
-    {
-      text: 'Tools & Execution',
-      collapsed: false,
-      items: [
         { text: '06. Tool System', link: '/en/guide/chapter-06' },
         { text: '07. Execution Pipeline', link: '/en/guide/chapter-07' },
-        { text: '10. MCP Protocol', link: '/en/guide/chapter-10' },
       ]
     },
     {
-      text: 'State & Context',
+      text: 'System Integration',
       collapsed: false,
       items: [
         { text: '08. Context Management', link: '/en/guide/chapter-08' },
-        { text: '11. State Management', link: '/en/guide/chapter-11' },
-        { text: '11b. Command History & Queue', link: '/en/guide/chapter-11b' },
-      ]
-    },
-    {
-      text: 'Interface',
-      collapsed: false,
-      items: [
         { text: '09. UI System (Ink)', link: '/en/guide/chapter-09' },
-        { text: '12c. Streaming & Themes', link: '/en/guide/chapter-12c' },
+        { text: '10. MCP Protocol', link: '/en/guide/chapter-10' },
+        { text: '11. State Management', link: '/en/guide/chapter-11' },
+        { text: '12. Command History & Queue', link: '/en/guide/chapter-12' },
       ]
     },
     {
       text: 'Extensions',
       collapsed: false,
       items: [
-        { text: '12a. Slash Commands', link: '/en/guide/chapter-12a' },
-        { text: '12b. Interactive Commands', link: '/en/guide/chapter-12b' },
-        { text: '12d. Skills System', link: '/en/guide/chapter-12d' },
-        { text: '12e. Hooks System', link: '/en/guide/chapter-12e' },
+        { text: '13. Slash Commands', link: '/en/guide/chapter-13' },
+        { text: '14. Interactive Commands', link: '/en/guide/chapter-14' },
+        { text: '15. Streaming & Themes', link: '/en/guide/chapter-15' },
+        { text: '16. Skills System', link: '/en/guide/chapter-16' },
+        { text: '17. Hooks System', link: '/en/guide/chapter-17' },
       ]
     },
   ]
 }
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   title: 'ClawdCode',
   base: '/ClawdCode/',
   lastUpdated: true,
@@ -218,5 +195,9 @@ export default defineConfig({
 
   sitemap: {
     hostname: 'https://kkkhs.github.io/ClawdCode/',
+  },
+}), {
+  mermaid: {
+    theme: 'dark',
   },
 })

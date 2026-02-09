@@ -25,44 +25,34 @@ Coding Agent = LLM + System Prompt + Context + Tools
 | [02](/guide/chapter-02) | 项目搭建 | 技术栈选型、Hello World |
 | [03](/guide/chapter-03) | CLI 入口 | yargs 配置、中间件 |
 
-### Agent 核心
+### 核心架构
 
 | # | 主题 | 内容 |
 |:--|:-----|:-----|
 | [04](/guide/chapter-04) | Agent 核心 | Agent 类、Agentic Loop |
 | [05](/guide/chapter-05) | System Prompt | 提示词架构、Plan 模式 |
-
-### 工具与执行
-
-| # | 主题 | 内容 |
-|:--|:-----|:-----|
 | [06](/guide/chapter-06) | 工具系统 | 工具抽象、内置工具 |
 | [07](/guide/chapter-07) | 执行管道与权限 | 七阶段管道、权限模型 |
-| [10](/guide/chapter-10) | MCP 协议 | 外部工具发现、协议集成 |
 
-### 状态与上下文
+### 系统集成
 
 | # | 主题 | 内容 |
 |:--|:-----|:-----|
 | [08](/guide/chapter-08) | 上下文管理 | Token 统计、自动压缩 |
-| [11](/guide/chapter-11) | 状态管理 | Zustand Store、会话持久化 |
-| [11b](/guide/chapter-11b) | 命令历史与队列 | 命令历史、队列系统 |
-
-### 界面
-
-| # | 主题 | 内容 |
-|:--|:-----|:-----|
 | [09](/guide/chapter-09) | UI 系统 | Ink (React for CLI)、Markdown |
-| [12c](/guide/chapter-12c) | 流式输出与主题 | 流式渲染、主题持久化 |
+| [10](/guide/chapter-10) | MCP 协议 | 外部工具发现、协议集成 |
+| [11](/guide/chapter-11) | 状态管理 | Zustand Store、会话持久化 |
+| [12](/guide/chapter-12) | 命令历史与队列 | 命令历史、队列系统 |
 
-### 扩展
+### 扩展能力
 
 | # | 主题 | 内容 |
 |:--|:-----|:-----|
-| [12a](/guide/chapter-12a) | Slash Commands | 命令系统、自定义命令 |
-| [12b](/guide/chapter-12b) | 交互式 Commands | 模型/主题交互式选择 |
-| [12d](/guide/chapter-12d) | Skills 系统 | Agent 技能模块 |
-| [12e](/guide/chapter-12e) | Hooks 系统 | 生命周期钩子 |
+| [13](/guide/chapter-13) | Slash Commands | 命令系统、自定义命令 |
+| [14](/guide/chapter-14) | 交互式 Commands | 模型/主题交互式选择 |
+| [15](/guide/chapter-15) | 流式输出与主题 | 流式渲染、主题持久化 |
+| [16](/guide/chapter-16) | Skills 系统 | Agent 技能模块 |
+| [17](/guide/chapter-17) | Hooks 系统 | 生命周期钩子 |
 
 ## 技术栈
 

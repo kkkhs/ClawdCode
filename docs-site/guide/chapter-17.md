@@ -1,8 +1,8 @@
-# 第 12e 章：Hooks 系统
+# 第 17 章：Hooks 系统
 
 > 本章实现 Hooks 系统，允许用户在 Agent 生命周期的关键节点注入自定义 Shell 命令。
 
-## 12e.1 什么是 Hooks？
+## 17.1 什么是 Hooks？
 
 Hooks 是一种强大的扩展机制，允许用户在特定事件点注入自定义 Shell 命令。通过 Hooks，你可以：
 
@@ -12,7 +12,7 @@ Hooks 是一种强大的扩展机制，允许用户在特定事件点注入自�
 - **自动化工作流**：代码格式化、安全检查、日志记录
 - **控制 Agent 行为**：决定权限、停止条件等
 
-## 12e.2 Hook 事件类型
+## 17.2 Hook 事件类型
 
 Hooks 支持 11 种事件，分为四大类：
 
@@ -50,7 +50,7 @@ export enum HookEvent {
 | **Stop** | Agent 停止时 | 强制继续执行 |
 | **Compaction** | 压缩上下文时 | 阻止压缩 |
 
-## 12e.3 配置结构
+## 17.3 配置结构
 
 ```typescript
 export interface HookConfig {
@@ -86,7 +86,7 @@ export interface CommandHook {
 }
 ```
 
-## 12e.4 输入输出协议
+## 17.4 输入输出协议
 
 Hook 通过 **stdin 接收 JSON 输入**，通过 **stdout 返回 JSON 输出**。
 
@@ -123,7 +123,7 @@ interface PreToolUseOutput {
 | 2 | 阻塞错误 | 停止执行 |
 | 124 | 超时 | 根据 timeoutBehavior 处理 |
 
-## 12e.5 核心实现
+## 17.5 核心实现
 
 ### Matcher
 
@@ -237,7 +237,7 @@ export class HookManager {
 }
 ```
 
-## 12e.6 执行策略
+## 17.6 执行策略
 
 | 事件类型 | 执行策略 | 原因 |
 |----------|----------|------|
@@ -247,7 +247,7 @@ export class HookManager {
 | UserPromptSubmit | **并行** | stdout 合并注入 |
 | Stop | **串行** | 第一个 continue:true 即返回 |
 
-## 12e.7 配置示例
+## 17.7 配置示例
 
 ### 阻止读取敏感文件
 
@@ -307,7 +307,7 @@ export class HookManager {
 }
 ```
 
-## 12e.8 `/hooks` 命令
+## 17.8 `/hooks` 命令
 
 ```
 /hooks           # 显示 Hooks 状态
@@ -333,7 +333,7 @@ export class HookManager {
 - **UserPromptSubmit**: 1 个
 ```
 
-## 12e.9 测试方法
+## 17.9 测试方法
 
 ### 1. 创建测试配置
 
@@ -374,7 +374,7 @@ node dist/main.js --debug
 rm ~/.clawdcode/settings.json
 ```
 
-## 12e.10 ExecutionPipeline 集成
+## 17.10 ExecutionPipeline 集成
 
 HookStage 和 PostHookStage 通过 **HookService** 调用对应的 Hooks，保持架构统一。
 
@@ -463,7 +463,7 @@ export class PostHookStage implements PipelineStage {
 }
 ```
 
-## 12e.11 HookService - 简洁 API 层
+## 17.11 HookService - 简洁 API 层
 
 为避免在各处散落的 HookManager 调用，我们提供了 `HookService` 作为统一的 facade 层。**所有 Hook 调用都通过 HookService 管理**：
 
@@ -564,7 +564,7 @@ import { onPostToolUse, onPostToolUseFailure } from '../../../hooks/index.js';
 const hookResult = await onPostToolUse(tool.name, toolUseId, params, result, sessionId);
 ```
 
-## 12e.12 集成点总览
+## 17.12 集成点总览
 
 **所有 Hook 调用都统一通过 HookService**：
 
@@ -580,7 +580,7 @@ const hookResult = await onPostToolUse(tool.name, toolUseId, params, result, ses
 | **Compaction** | CompactionService | `onCompaction` | 压缩前，可阻止压缩 |
 | **Stop** | Agent.executeLoop | `onStop` | Agent 停止时，可强制继续执行 |
 
-## 12e.13 新增/修改文件
+## 17.13 新增/修改文件
 
 | 文件 | 说明 |
 |------|------|
@@ -596,7 +596,7 @@ const hookResult = await onPostToolUse(tool.name, toolUseId, params, result, ses
 | `src/context/CompactionService.ts` | Compaction 集成 |
 | `src/config/types.ts` | HookConfigSchema |
 
-## 12e.14 TODO
+## 17.14 TODO
 
 - [x] 集成到 ExecutionPipeline
 - [x] 从 settings.json 加载配置

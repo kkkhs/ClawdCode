@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "ClawdCode"
   text: "从零构建 AI Coding Agent"
-  tagline: 参考 Claude Code 架构，从原理到实现，构建一个生产级 CLI 编程助手。15 章深度教程，完整开源。
+  tagline: 参考 Claude Code 架构，从原理到实现，构建一个生产级 CLI 编程助手。17 章深度教程，完整开源。
   image:
     src: /logo.svg
     alt: ClawdCode
@@ -40,49 +40,49 @@ features:
   - icon: "~"
     title: 插件化扩展
     details: "Slash Commands、Skills、Hooks、自定义命令 — Markdown 文件即命令，零代码扩展 Agent 行为。"
-    link: /guide/chapter-12a
+    link: /guide/chapter-13
 ---
 
 <div class="vp-doc custom-home">
 
-## 你将构建什么
+## 🔨 你将构建什么
 
 一个功能完整的 CLI Coding Agent，具备以下能力：
 
 <div class="capability-grid">
 <div class="capability">
 
-**智能对话** — 基于 OpenAI 兼容 API 的多轮对话，支持思考过程展示与自动折叠
+🤖 **智能对话** — 基于 OpenAI 兼容 API 的多轮对话，支持思考过程展示与自动折叠
 
 </div>
 <div class="capability">
 
-**文件操作** — 读写、编辑、搜索、Glob 匹配，Agent 自主操作你的代码库
+📂 **文件操作** — 读写、编辑、搜索、Glob 匹配，Agent 自主操作你的代码库
 
 </div>
 <div class="capability">
 
-**命令执行** — Shell 命令执行，带权限控制和用户确认机制
+⚡ **命令执行** — Shell 命令执行，带权限控制和用户确认机制
 
 </div>
 <div class="capability">
 
-**上下文管理** — Token 统计、自动压缩、会话持久化，突破上下文窗口限制
+🧠 **上下文管理** — Token 统计、自动压缩、会话持久化，突破上下文窗口限制
 
 </div>
 <div class="capability">
 
-**交互式 UI** — 语法高亮、Markdown 渲染、主题切换、命令补全、代码块复制
+🎨 **交互式 UI** — 语法高亮、Markdown 渲染、主题切换、命令补全、代码块复制
 
 </div>
 <div class="capability">
 
-**可扩展架构** — MCP 协议、自定义命令、Hooks 系统，面向真实场景设计
+🧩 **可扩展架构** — MCP 协议、自定义命令、Hooks 系统，面向真实场景设计
 
 </div>
 </div>
 
-## 架构总览
+## 🏗️ 架构总览
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -109,40 +109,40 @@ features:
 └──────────────────────────────────────────────────────────┘
 ```
 
-## 为什么选择这个教程
+## 💡 为什么选择这个教程
 
 <div class="why-grid">
 <div class="why-item">
 
-### 参考 Claude Code
+### 🔬 参考 Claude Code
 
 不是玩具项目。参考 Anthropic Claude Code 的真实架构设计，包括权限系统、Hooks、MCP 集成。
 
 </div>
 <div class="why-item">
 
-### 15 章循序渐进
+### 📖 17 章循序渐进
 
 从 Hello World 到完整 Agent，每章都有可运行的代码。理解每一行为什么存在。
 
 </div>
 <div class="why-item">
 
-### 生产级质量
+### ✅ 生产级质量
 
 TypeScript 严格模式、Zod 运行时验证、完整错误处理、AbortController 中断机制。
 
 </div>
 <div class="why-item">
 
-### 开箱即用
+### 📦 开箱即用
 
 `npm install -g clawdcode` 直接使用，不只是教学项目 — 它本身就是一个可用的 Coding Agent。
 
 </div>
 </div>
 
-## 快速开始
+## 🚀 快速开始
 
 ```bash
 # 安装
@@ -155,7 +155,7 @@ export OPENAI_API_KEY=sk-...
 clawdcode "帮我分析一下这个项目的架构"
 ```
 
-## 技术栈
+## 🔧 技术栈
 
 <div class="stack-grid">
 <div class="stack-item">
@@ -192,11 +192,11 @@ clawdcode "帮我分析一下这个项目的架构"
 </div>
 </div>
 
-## 数据一览
+## 📊 数据一览
 
 <div class="stats-grid">
 <div class="stat">
-<span class="stat-number">15</span>
+<span class="stat-number">17</span>
 <span class="stat-label">章节</span>
 </div>
 <div class="stat">

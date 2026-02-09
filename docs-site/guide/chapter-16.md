@@ -1,8 +1,8 @@
-# 第 12d 章：Skills 系统
+# 第 16 章：Skills 系统
 
 > 本章实现 Skills 系统，让 Agent 具备可扩展的专业能力。
 
-## 12d.1 什么是 Skills？
+## 16.1 什么是 Skills？
 
 Skills 是 ClawdCode 的核心扩展机制，允许通过 Markdown 文件（`SKILL.md`）定义专业能力、工作流规范和最佳实践。
 
@@ -20,7 +20,7 @@ Skills 是 ClawdCode 的核心扩展机制，允许通过 Markdown 文件（`SKI
 - **AI 自动调用**：Agent 根据 `description` 自动判断何时使用
 - **用户手动调用**：通过 `/skills` 命令查看和管理
 
-## 12d.2 核心机制：渐进式披露
+## 16.2 核心机制：渐进式披露
 
 为平衡上下文窗口和能力扩展，Skills 采用**渐进式披露（Progressive Disclosure）**：
 
@@ -46,7 +46,7 @@ Skills 是 ClawdCode 的核心扩展机制，允许通过 Markdown 文件（`SKI
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 12d.3 为什么 Skill 是一个 Tool？
+## 16.3 为什么 Skill 是一个 Tool？
 
 这是 Skills 系统的核心设计决策。
 
@@ -175,7 +175,7 @@ Agent: 现在有了完整指令，开始执行...
 
 这样 Agent 的"书包"（上下文窗口）不用装整本字典，只需带目录，按需查阅。
 
-## 12d.4 目录结构与优先级
+## 16.4 目录结构与优先级
 
 Skills 按以下优先级扫描（后加载覆盖先加载）：
 
@@ -198,7 +198,7 @@ Skills 按以下优先级扫描（后加载覆盖先加载）：
     └── SKILL.md
 ```
 
-## 12d.5 SKILL.md 规范
+## 16.5 SKILL.md 规范
 
 `SKILL.md` 由 **YAML Frontmatter** + **Markdown 正文** 组成：
 
@@ -249,7 +249,7 @@ git diff HEAD~1 --stat
 | `model` | ❌ | 指定执行模型 |
 | `when_to_use` | ❌ | 额外触发条件 |
 
-## 12d.6 类型定义
+## 16.6 类型定义
 
 ```typescript
 // src/skills/types.ts
@@ -279,7 +279,7 @@ export interface SkillContent {
 }
 ```
 
-## 12d.7 核心实现
+## 16.7 核心实现
 
 ### SkillLoader
 
@@ -396,7 +396,7 @@ Use when a user request matches an available skill's description.`,
 });
 ```
 
-## 12d.8 系统提示集成
+## 16.8 系统提示集成
 
 ```typescript
 // src/prompts/builder.ts
@@ -411,7 +411,7 @@ if (skillRegistry.isInitialized()) {
 }
 ```
 
-## 12d.9 `/skills` 管理命令
+## 16.9 `/skills` 管理命令
 
 ```typescript
 // src/slash-commands/builtinCommands.ts
@@ -451,7 +451,7 @@ export const skillsCommand: SlashCommand = {
 💡 使用 `/skills <name>` 查看详情 | ⚡ = 用户可调用
 ```
 
-## 12d.10 内置 Skills
+## 16.10 内置 Skills
 
 ClawdCode 内置一个 `skill-creator` Skill，帮助用户创建新的 Skills：
 
@@ -472,7 +472,7 @@ Help users create new SKILL.md files following the specification...`,
 ]);
 ```
 
-## 12d.11 示例：Commit Message Skill
+## 16.11 示例：Commit Message Skill
 
 创建 `.clawdcode/skills/commit-message/SKILL.md`：
 
@@ -520,7 +520,7 @@ git diff --cached
 > /skills commit-message
 ```
 
-## 12d.12 最佳实践
+## 16.12 最佳实践
 
 1. **描述要清晰**
 
@@ -547,7 +547,7 @@ git diff --cached
    - 频繁使用：`user-invocable: true`
    - 仅手动触发：`disable-model-invocation: true`
 
-## 12d.13 Skills vs Subagents
+## 16.13 Skills vs Subagents
 
 | 场景 | 推荐 | 原因 |
 |------|------|------|
@@ -560,7 +560,7 @@ git diff --cached
 - **Skills** = "告诉我怎么做"（方法论）
 - **Subagents** = "帮我去做"（执行者）
 
-## 12d.14 测试方法
+## 16.14 测试方法
 
 ### 1. 创建测试 Skill
 
@@ -609,7 +609,7 @@ AI 应调用 Skill 工具并遵循指令。
 rm -rf ~/.clawdcode/skills/test-skill
 ```
 
-## 12d.15 修改的文件
+## 16.15 修改的文件
 
 | 文件 | 说明 |
 |------|------|
@@ -623,7 +623,7 @@ rm -rf ~/.clawdcode/skills/test-skill
 | `src/slash-commands/types.ts` | 添加 skills 分类 |
 | `src/ui/components/ClawdInterface.tsx` | 初始化 Skills |
 
-## 12d.16 TODO
+## 16.16 TODO
 
 - [ ] SkillInstaller 自动下载官方 Skills
 - [ ] User-invocable Skills 自动生成 Slash Commands
