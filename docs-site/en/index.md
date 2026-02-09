@@ -3,15 +3,15 @@ layout: home
 
 hero:
   name: "ClawdCode"
-  text: "从零构建 AI Coding Agent"
-  tagline: 深入理解 Coding Agent 设计原理，一步步构建你自己的 CLI 编程助手。开源、TypeScript、生产级。
+  text: "Build your own AI Coding Agent"
+  tagline: A deep-dive tutorial on building a CLI coding agent from scratch — open source, TypeScript, production-grade.
   image:
     src: /logo.svg
     alt: ClawdCode
   actions:
     - theme: brand
-      text: 开始阅读
-      link: /guide/
+      text: Get Started
+      link: /en/guide/
     - theme: alt
       text: GitHub
       link: https://github.com/kkkhs/ClawdCode
@@ -19,25 +19,25 @@ hero:
 features:
   - icon: ">"
     title: Agent Loop
-    details: "LLM + System Prompt + Context + Tools — 理解驱动 Claude Code 等 Coding Agent 的核心循环。"
-    link: /guide/chapter-01
+    details: "LLM + System Prompt + Context + Tools. Understand the core loop that powers coding agents like Claude Code."
+    link: /en/guide/chapter-01
   - icon: "{}"
-    title: 工具系统
-    details: "七阶段执行管道，内置权限控制、Hooks、确认机制 — 安全优先的工具架构。"
-    link: /guide/chapter-07
+    title: Tool System
+    details: "7-stage execution pipeline with permission control, hooks, and confirmation — build tools that are safe by default."
+    link: /en/guide/chapter-07
   - icon: "$"
-    title: 终端 UI
-    details: "基于 Ink (React for CLI) 构建 — Markdown 渲染、语法高亮、主题切换、内联确认。"
-    link: /guide/chapter-09
+    title: Terminal UI
+    details: "React-based CLI with Ink — Markdown rendering, syntax highlighting, themes, inline confirmation prompts."
+    link: /en/guide/chapter-09
   - icon: "~"
-    title: 可扩展
-    details: "MCP 协议、Slash Commands、Skills、Hooks — 面向真实场景的插件化架构。"
-    link: /guide/chapter-10
+    title: Extensible
+    details: "MCP protocol, slash commands, skills, hooks — a plugin architecture designed for real-world use."
+    link: /en/guide/chapter-10
 ---
 
 <div class="vp-doc custom-home">
 
-## 架构
+## Architecture
 
 ```
 User ──▶ CLI ──▶ Agent Loop ──▶ LLM
@@ -54,26 +54,26 @@ User ──▶ CLI ──▶ Agent Loop ──▶ LLM
                     │     │  format     │
                     │     └─────┬───────┘
                     │           │
-                    └───────────┘  注入结果，继续循环
+                    └───────────┘  inject results, continue
 ```
 
-## 快速开始
+## Quick Start
 
 ```bash
 npm install -g clawdcode
 export OPENAI_API_KEY=sk-...
-clawdcode "分析一下这个项目"
+clawdcode "analyze this project"
 ```
 
-## 技术栈
+## Tech Stack
 
 ```
 TypeScript · Bun · Ink (React for CLI) · Zustand · OpenAI SDK · Zod · MCP
 ```
 
 <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-  <a href="/ClawdCode/guide/" class="action-link">阅读教程 →</a>
-  <a href="https://github.com/kkkhs/ClawdCode" class="action-link alt">查看源码 ↗</a>
+  <a href="/ClawdCode/en/guide/" class="action-link">Read the Guide →</a>
+  <a href="https://github.com/kkkhs/ClawdCode" class="action-link alt">View Source ↗</a>
 </div>
 
 </div>
