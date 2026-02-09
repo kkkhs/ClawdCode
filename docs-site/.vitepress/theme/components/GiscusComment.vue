@@ -21,9 +21,9 @@ const theme = computed(() => isDark.value ? 'dark_dimmed' : 'light')
     <Giscus
       :key="route.path"
       repo="kkkhs/ClawdCode"
-      repo-id="R_kgDONyJSPw"
+      repo-id="R_kgDORHb3qg"
       category="Announcements"
-      category-id="DIC_kwDONyJSP84CnNjD"
+      category-id="DIC_kwDORHb3qs4C2FC4"
       mapping="pathname"
       strict="0"
       reactions-enabled="1"
