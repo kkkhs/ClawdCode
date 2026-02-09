@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/kkkhs/ClawdCode/compare/v1.7.0...v1.8.0) (2026-02-09)
+
+
+### Features
+
+* **docs-site:** add i18n support with Chinese default and English locale ([307ce0b](https://github.com/kkkhs/ClawdCode/commit/307ce0ba6c3361664a4011f89d28047674d237ae))
+* **docs-site:** enrich homepage content and tech stack presentation ([db401a2](https://github.com/kkkhs/ClawdCode/commit/db401a2a02d1a98bae9d321c0d7eac446d3141dc))
+
 ## [1.7.0](https://github.com/kkkhs/ClawdCode/compare/v1.6.0...v1.7.0) (2026-02-06)
 
 
