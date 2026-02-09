@@ -1,80 +1,82 @@
-# 简介
+# ClawdCode Guide
 
-::: tip 🎉 欢迎来到 ClawdCode 教程！
-本教程将带你从零开始，一步步实现一个功能完整的 CLI Coding Agent，深入理解 AI Agent 的设计原理。
-:::
+A step-by-step tutorial on building a production-grade CLI coding agent.
 
-## 🧠 核心公式
+## The Formula
 
 ```
 Coding Agent = LLM + System Prompt + Context + Tools
 ```
 
-<div class="tip-box">
+| Component | Role |
+|:----------|:-----|
+| **LLM** | Reasoning engine |
+| **System Prompt** | Identity, constraints, style |
+| **Context** | Project info, conversation history |
+| **Tools** | File I/O, shell, search — the agent's hands |
 
-| 组件 | 类比 | 作用 |
-|:-----|:-----|:-----|
-| **LLM** | 🧠 大脑 | 提供逻辑推理与决策能力 |
-| **System Prompt** | 🎭 性格 | 定义行为边界、能力范围 |
-| **Context** | 💾 记忆 | 当前项目信息、任务上下文 |
-| **Tools** | 🤲 双手 | 真正操作世界（读写文件、执行命令） |
+## Structure
 
-</div>
+### Getting Started
 
-## 📚 教程结构
+| # | Topic | What you'll learn |
+|:--|:------|:------------------|
+| [01](/guide/chapter-01) | Coding Agent 概述 | Core concepts, design philosophy |
+| [02](/guide/chapter-02) | 项目搭建 | Tech stack, Hello World agent |
+| [03](/guide/chapter-03) | CLI 入口 | yargs, middleware, version check |
 
-### 🌱 第一部分：基础篇
+### Agent Core
 
-| 章节 | 标题 | 内容 |
-|:-----|:-----|:-----|
-| [01](/guide/chapter-01) | Coding Agent 概述 | 核心概念、设计理念、架构概览 |
-| [02](/guide/chapter-02) | 项目搭建 | 技术栈选择、Hello World Agent |
-| [03](/guide/chapter-03) | CLI 入口 | yargs 配置、中间件、版本检查 |
+| # | Topic | What you'll learn |
+|:--|:------|:------------------|
+| [04](/guide/chapter-04) | Agent 核心 | Agent class, Agentic Loop |
+| [05](/guide/chapter-05) | System Prompt | Prompt architecture, Plan mode |
 
-### ⚡ 第二部分：核心篇
+### Tools & Execution
 
-| 章节 | 标题 | 内容 |
-|:-----|:-----|:-----|
-| [04](/guide/chapter-04) | Agent 核心 | Agent 类设计、Agentic Loop |
-| [05](/guide/chapter-05) | System Prompt | 系统提示词、Plan 模式 |
-| [06](/guide/chapter-06) | 工具系统 | 工具抽象、内置工具 |
-| [07](/guide/chapter-07) | 执行管道 | 权限模型、确认机制 |
-| [08](/guide/chapter-08) | 上下文管理 | Token 统计、自动压缩 |
+| # | Topic | What you'll learn |
+|:--|:------|:------------------|
+| [06](/guide/chapter-06) | 工具系统 | Tool abstraction, built-in tools |
+| [07](/guide/chapter-07) | 执行管道与权限 | 7-stage pipeline, permission model |
+| [10](/guide/chapter-10) | MCP 协议 | External tool discovery, protocol |
 
-### 🚀 第三部分：进阶篇
+### State & Context
 
-| 章节 | 标题 | 内容 |
-|:-----|:-----|:-----|
-| [09](/guide/chapter-09) | UI 系统 | Ink 框架、Markdown 渲染 |
-| [10](/guide/chapter-10) | MCP 协议 | 工具发现、服务器管理 |
-| [11](/guide/chapter-11) | 状态管理 | Zustand Store、会话持久化 |
-| [12a](/guide/chapter-12a) | Slash Commands | 命令系统、自定义命令 |
+| # | Topic | What you'll learn |
+|:--|:------|:------------------|
+| [08](/guide/chapter-08) | 上下文管理 | Token counting, auto-compaction |
+| [11](/guide/chapter-11) | 状态管理 | Zustand store, session persistence |
+| [11b](/guide/chapter-11b) | 命令历史与队列 | Command history, queue system |
 
-## 🛠️ 技术栈
+### Interface
 
-<div class="tech-stack">
+| # | Topic | What you'll learn |
+|:--|:------|:------------------|
+| [09](/guide/chapter-09) | UI 系统 | Ink (React for CLI), Markdown |
+| [12c](/guide/chapter-12c) | 流式输出与主题 | Streaming, theme persistence |
 
-| 组件 | 选择 | 说明 |
-|:-----|:-----|:-----|
-| 📝 语言 | TypeScript | 类型安全，LLM 熟悉 |
-| 🎨 UI 框架 | Ink | React for CLI |
-| ⌨️ CLI 框架 | yargs | 命令解析 |
-| 🤖 LLM 接口 | OpenAI SDK | 兼容多种服务 |
-| ✅ 验证 | Zod | 运行时验证 |
-| ⚡ 运行时 | Bun | 快速构建 |
-| 📦 状态管理 | Zustand | 轻量级 Store |
+### Extensions
 
-</div>
+| # | Topic | What you'll learn |
+|:--|:------|:------------------|
+| [12a](/guide/chapter-12a) | Slash Commands | Command system, custom commands |
+| [12b](/guide/chapter-12b) | 交互式 Commands | Interactive model/theme selection |
+| [12d](/guide/chapter-12d) | Skills 系统 | Agent skill modules |
+| [12e](/guide/chapter-12e) | Hooks 系统 | Lifecycle hooks |
 
-## 🚀 快速开始
+## Tech Stack
 
-### 环境要求
+```
+TypeScript · Bun · Ink · Zustand · OpenAI SDK · Zod · MCP
+```
 
-- Node.js >= 18.0.0
-- Bun >= 1.0.0
-- 一个 OpenAI 兼容的 API Key
+## Requirements
 
-### 安装使用
+- Node.js >= 18
+- Bun >= 1.0
+- An OpenAI-compatible API key
+
+## Install
 
 ::: code-group
 
@@ -86,81 +88,27 @@ npm install -g clawdcode
 bun add -g clawdcode
 ```
 
-```bash [从源码]
+```bash [source]
 git clone https://github.com/kkkhs/ClawdCode.git
-cd ClawdCode
-bun install
-bun run dev
+cd ClawdCode && bun install && bun run dev
 ```
 
 :::
 
-### 配置 API
+## Run
 
 ```bash
-# 方式 1: 交互式配置
-clawdcode --init
-
-# 方式 2: 环境变量
-export OPENAI_API_KEY=sk-your-api-key
+clawdcode                          # interactive mode
+clawdcode "analyze this project"   # with initial message
+clawdcode --continue               # resume last session
 ```
 
-### 运行
+## Resources
 
-```bash
-# 交互模式
-clawdcode
-
-# 带初始消息
-clawdcode "帮我分析这个项目"
-
-# 恢复上次会话
-clawdcode --continue
-```
-
-## 🗺️ 学习路径
-
-```
-第 1 章 (概念理解)
-    ↓
-第 2 章 (环境搭建)
-    ↓
-第 3 章 (CLI 框架)
-    ↓
-第 4-5 章 (Agent 核心) ←── 重点章节
-    ↓
-第 6-7 章 (工具系统) ←── 重点章节
-    ↓
-第 8 章 (上下文管理)
-    ↓
-进阶章节 (UI / MCP / 状态管理)
-```
-
-## 📖 参考资源
-
-- [万字长文 | 实现自己的 Claude Code](https://bytetech.info/articles/7585343019822350379)
 - [OpenAI Function Calling](https://platform.openai.com/docs/guides/function-calling)
-- [Ink 文档](https://github.com/vadimdemedes/ink)
+- [Ink](https://github.com/vadimdemedes/ink)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 
 ---
 
-::: info 准备好了吗？
-让我们从 [第 1 章：Coding Agent 概述](/guide/chapter-01) 开始你的 AI Agent 之旅！
-:::
-
-<style>
-.tip-box {
-  background: var(--vp-c-bg-soft);
-  border-radius: 8px;
-  padding: 1rem;
-  margin: 1rem 0;
-}
-
-.tech-stack {
-  background: var(--vp-c-bg-soft);
-  border-radius: 8px;
-  padding: 1rem;
-  margin: 1rem 0;
-}
-</style>
+Ready? Start with [01. Coding Agent 概述](/guide/chapter-01).
